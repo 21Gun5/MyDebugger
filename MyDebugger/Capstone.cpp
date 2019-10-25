@@ -35,6 +35,7 @@ void Capstone::DisAsm(HANDLE Handle, LPVOID Addr, DWORD Count)
 
 	// for 条件在少数情况下会产生问题，可能需要修改条件
 	//	- 某些时候，设置断点之后会生成无效指令
+	printf("\n=============================== 反汇编代码 =================================\n");
 	for (DWORD i = 0; i < Count && i < count; ++i)
 	{
 		printf("%08X\t", (UINT)ins[i].address);

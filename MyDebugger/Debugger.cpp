@@ -1,7 +1,11 @@
 #include <iostream>
+
 #include "Debugger.h"
 #include "Capstone.h"
 #include "BreakPoint.h"
+#include <psapi.h>
+#include <strsafe.h>
+#include <tchar.h>
 
 // 打开产生异常的进程/线程的句柄
 void Debugger::OpenHandles()
@@ -61,17 +65,17 @@ void Debugger::Run()
 		// 根据类型，分别处理调试事件
 		switch (m_debugEvent.dwDebugEventCode)//dwDebugEventCode 标识事件类型
 		{
-		case EXCEPTION_DEBUG_EVENT:     // 异常调试事件
+		// 异常调试事件
+		case EXCEPTION_DEBUG_EVENT:     
 			OnExceptionEvent();
+			break;
+		// 模块导入事件
+		case LOAD_DLL_DEBUG_EVENT:
+			OnLoadDLLEvent();
 			break;
 		}
 
-		// 在处理模块加载事件和进程创建事件的时候，对应的结构体
-		// 中会提供两个字段，lpImageName 和 fUnicode，理论上
-		// lpImageName 是一个指向目标进程内存空间指针，地址上
-		// 保存了模块的名称，fUnicode用于标识名称是否是宽字符。
-		// 但是，实际上这两个值没有任何的意义。可以通过搜索引擎
-		// 搜索通过文件句柄找到模块名称(路径)获取。
+
 
 		// 为了防止句柄泄露，应该关闭
 		CloseHandles();
@@ -86,13 +90,13 @@ void Debugger::Run()
 		ContinueDebugEvent(m_debugEvent.dwProcessId,m_debugEvent.dwThreadId,m_continueStatus);
 	}
 }
-// 处理调试事件中的异常事件
+// 处理异常事件
 void Debugger::OnExceptionEvent()
 {
 	// 获取异常类型、发生地址
 	DWORD exceptionCode = m_debugEvent.u.Exception.ExceptionRecord.ExceptionCode;
 	LPVOID exceptionAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionAddress;
-	printf("\n================================ 基本信息 ==================================\n");
+	printf("\n================================ 异常信息 ==================================\n");
 	printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 	
 	// 处理不同的异常类型
@@ -126,23 +130,22 @@ void Debugger::OnExceptionEvent()
 		printf("详情: 内存访问断点发生\n");
 		break;
 	}
-
 	// 查看反汇编代码（eip处，而非异常发生处
-	printf("\n=============================== 反汇编代码 =================================\n");
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);
 	// 查看寄存器信息
-	CONTEXT ct = { 0 };
-	GetThreadContext(m_threadHandle, &ct);
-	printf("=============================== 寄存器信息 =================================\n");
-	printf("数据寄存器：       EAX:%08X  EBX:%08X  ECX:%08X  EDX:%08X\n", ct.Eax, ct.Ebx, ct.Ecx, ct.Edx);
-	printf("段寄存器：         ECS:%08X  EDS:%08X  ESS:%08X  EES:%08X\n", ct.SegCs, ct.SegDs, ct.SegEs, ct.SegEs);
-	printf("变址寄存器：       ESI:%08X  EDI:%08X\n", ct.Esi, ct.Edi);
-	printf("地址寄存器：       EBP:%08X  ESP:%08X\n", ct.Ebp, ct.Esp);
-	printf("指令指针寄存器：   EIP:%08X\n", ct.Eip);
-	printf("标志寄存器：       EFLAGS:%08X\n", ct.EFlags);
-
+	ShowRegisterInfo();
+	// 查看栈空间
+	ShowStackInfo();
 	// 获取用户输入
 	GetUserCommand();
+}
+// 处理模块导入事件
+void Debugger::OnLoadDLLEvent()
+{
+	// 获取dll文件的句柄
+	HANDLE hFile = m_debugEvent.u.LoadDll.hFile;
+	// 显示导入的模块（通过句柄获取路径
+	ShowLoadDLL(hFile);
 }
 
 // 获取用户的输入
@@ -152,15 +155,9 @@ void Debugger::GetUserCommand()
 
 	while (true)
 	{
+		// 显示支持的命令
+		ShowCommandMenu();
 		// 获取指令，指令应该是事先考虑好的
-		printf("\n================================ 键入指令 ==================================\n");
-		printf("g:      \t继续执行\n");
-		printf("p:      \t设置单步断点\n");
-		printf("bp-addr:\t设置软件断点\n");
-		printf("hde-addr:\t设置硬件断点\n");
-		printf("mem-addr:\t设置内存访问断点\n");
-		printf("u-addr-lines:\t查看汇编指令\n");
-		//printf("g: 继续执行");
 		printf(">>> ");
 		scanf_s("%s", input, 0x100);
 		// 继续执行，直到运行结束或遇到下一个异常
@@ -174,6 +171,20 @@ void Debugger::GetUserCommand()
 			int addr = 0, lines = 0;
 			scanf_s("%x %d", &addr, &lines);
 			Capstone::DisAsm(m_processHandle, (LPVOID)addr, lines);
+		}
+		// 修改汇编指令
+		else if (!strcmp(input, "mu"))
+		{
+			LPVOID addr = 0;
+			char buff[0x10] = { 0 };
+			scanf_s("%x", &addr);
+			scanf_s("%s", buff,0x10);
+			ModifyAssemble(m_processHandle, addr, buff);
+		}
+		// test
+		else if (!strcmp(input, "test"))
+		{
+			ModifyRegister(m_processHandle);
 		}
 		// 设置int3软件断点
 		else if (!strcmp(input, "bp"))
@@ -200,4 +211,148 @@ void Debugger::GetUserCommand()
 			printf("指令输入错误\n");
 		}
 	}
+}
+// 查看寄存器信息
+void Debugger::ShowRegisterInfo()
+{
+	CONTEXT ct = { 0 };
+	ct.ContextFlags = CONTEXT_CONTROL;// 加此标识（什么类型的环境
+	GetThreadContext(m_threadHandle, &ct);
+	printf("=============================== 寄存器信息 =================================\n");
+	printf("数据寄存器：       EAX:%08X  EBX:%08X  ECX:%08X  EDX:%08X\n", ct.Eax, ct.Ebx, ct.Ecx, ct.Edx);
+	printf("段寄存器：         ECS:%08X  EDS:%08X  ESS:%08X  EES:%08X\n", ct.SegCs, ct.SegDs, ct.SegEs, ct.SegEs);
+	printf("变址寄存器：       ESI:%08X  EDI:%08X\n", ct.Esi, ct.Edi);
+	printf("地址寄存器：       EBP:%08X  ESP:%08X\n", ct.Ebp, ct.Esp);
+	printf("指令指针寄存器：   EIP:%08X\n", ct.Eip);
+	printf("标志寄存器：       EFLAGS:%08X\n", ct.EFlags);
+}
+// 查看栈空间信息
+void Debugger::ShowStackInfo()
+{
+	CONTEXT ct = { 0 };
+	ct.ContextFlags = CONTEXT_CONTROL;// 加此标识（什么类型的环境
+	GetThreadContext(m_threadHandle, &ct);
+	BYTE buff[512] = { 0 };//获取 esp 中保存的地址
+	DWORD dwRead = 0;
+	ReadProcessMemory(m_processHandle, (BYTE*)ct.Esp, buff, 512, &dwRead);
+	printf("\n================================= 栈空间 ===================================\n");
+	for (int i = 0; i < 10; i++)
+	{
+		printf("ESP + %2d\t%08X\n", i * 4, ((DWORD *)buff)[i]);
+	}
+}
+// 显示支持的命令
+void Debugger::ShowCommandMenu()
+{
+	printf("\n================================ 键入指令 ==================================\n");
+	printf("g:      \t继续执行\n");
+	printf("p:      \t设置单步断点\n");
+	printf("bp-addr:\t设置软件断点\n");
+	printf("hde-addr:\t设置硬件断点\n");
+	printf("mem-addr:\t设置内存访问断点\n");
+	printf("u-addr-lines:\t查看汇编指令\n");
+	printf("mu-addr-buff:\t修改汇编指令\n");
+}
+// 显示模块信息（from CV
+bool Debugger::ShowLoadDLL(HANDLE hFile)
+{
+	BOOL bSuccess = FALSE;
+	TCHAR pszFilename[MAX_PATH + 1];
+	HANDLE hFileMap;
+	// Get the file size.
+	DWORD dwFileSizeHi = 0;
+	DWORD dwFileSizeLo = GetFileSize(hFile, &dwFileSizeHi);
+	if (dwFileSizeLo == 0 && dwFileSizeHi == 0)
+	{
+		_tprintf(TEXT("Cannot map a file with a length of zero.\n"));
+		return FALSE;
+	}
+	// Create a file mapping object.
+	hFileMap = CreateFileMapping(hFile,
+		NULL,
+		PAGE_READONLY,
+		0,
+		1,
+		NULL);
+	if (hFileMap)
+	{
+		// Create a file mapping to get the file name.
+		void* pMem = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 1);
+		if (pMem)
+		{
+			if (GetMappedFileName(GetCurrentProcess(),
+				pMem,
+				pszFilename,
+				MAX_PATH))
+			{
+				// Translate path with device name to drive letters.
+				TCHAR szTemp[512];
+				szTemp[0] = '\0';
+				if (GetLogicalDriveStrings(512 - 1, szTemp))
+				{
+					TCHAR szName[MAX_PATH];
+					TCHAR szDrive[3] = TEXT(" :");
+					BOOL bFound = FALSE;
+					TCHAR* p = szTemp;
+					do
+					{
+						// Copy the drive letter to the template string
+						*szDrive = *p;
+						// Look up each device name
+						if (QueryDosDevice(szDrive, szName, MAX_PATH))
+						{
+							size_t uNameLen = _tcslen(szName);
+							if (uNameLen < MAX_PATH)
+							{
+								bFound = _tcsnicmp(pszFilename, szName, uNameLen) == 0;
+								if (bFound && *(pszFilename + uNameLen) == _T('\\'))
+								{
+									// Reconstruct pszFilename using szTempFile
+									// Replace device path with DOS path
+									TCHAR szTempFile[MAX_PATH];
+									StringCchPrintf(szTempFile,
+										MAX_PATH,
+										TEXT("%s%s"),
+										szDrive,
+										pszFilename + uNameLen);
+									StringCchCopyN(pszFilename, MAX_PATH + 1, szTempFile, _tcslen(szTempFile));
+								}
+							}
+						}
+						// Go to the next NULL character.
+						while (*p++);
+					} while (!bFound && *p); // end of string
+				}
+			}
+			bSuccess = TRUE;
+			UnmapViewOfFile(pMem);
+		}
+		CloseHandle(hFileMap);
+	}
+	_tprintf(TEXT("ModuleLoaded\t%s\n"), pszFilename);
+	return bSuccess;
+}
+
+void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
+{
+	// 应该修改反汇编代码，而非机器指令，暂搁置
+
+	// 向目标进程的地址写入指定的字节
+	//strcpy_s(buff,0x10,"\xCC");
+	//WriteProcessMemory(process_handle, addr, buff, 1, NULL);
+}
+
+void Debugger::ModifyRegister(HANDLE thread_handle)
+{
+	// 为何修改不成功？有多个线程
+	CONTEXT context = { CONTEXT_CONTROL };
+	GetThreadContext(thread_handle, &context);
+	context.Eip = 0x1000;
+	SetThreadContext(thread_handle, &context);
+
+	ShowRegisterInfo();
+}
+
+void Debugger::ModifyStack()
+{
 }
