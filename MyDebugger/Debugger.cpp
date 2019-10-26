@@ -3,6 +3,7 @@
 #include "Debugger.h"
 #include "Capstone.h"
 #include "BreakPoint.h"
+#include <stdio.h>
 #include <psapi.h>
 #include <strsafe.h>
 #include <tchar.h>
@@ -74,9 +75,6 @@ void Debugger::Run()
 			OnLoadDLLEvent();
 			break;
 		}
-
-
-
 		// 为了防止句柄泄露，应该关闭
 		CloseHandles();
 
@@ -94,20 +92,18 @@ void Debugger::Run()
 // 处理异常事件
 void Debugger::OnExceptionEvent()
 {
-	// 获取异常类型、发生地址
+	// 1 获取异常类型、发生地址
 	DWORD exceptionCode = m_debugEvent.u.Exception.ExceptionRecord.ExceptionCode;
 	LPVOID exceptionAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionAddress;
 	printf("\n================================ 异常信息 ==================================\n");
 	printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
-	
-	// 处理不同的异常类型
+	// 2 处理不同的异常类型
 	switch (exceptionCode)
 	{
-	// 1 单步异常：DRx硬件断点、TF单步断点
+	// 1 单步异常：DRx硬件断点
 	case EXCEPTION_SINGLE_STEP:
-	{
-		printf("详情: DRx硬件断点发生\n");
-		BreakPoint::FixDRXBreakPoint(m_threadHandle, exceptionAddr);
+	{	
+		BreakPoint::FixDrxBreakPoint(m_threadHandle);
 		break;
 	}
 	// 2 断点异常: int3软件断点
@@ -131,13 +127,11 @@ void Debugger::OnExceptionEvent()
 		printf("详情: 内存访问断点发生\n");
 		break;
 	}
-	// 查看反汇编代码（eip处，而非异常发生处
-	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);
-	// 查看寄存器信息
-	ShowRegisterInfo(m_threadHandle);
-	// 查看栈空间
-	ShowStackInfo();
-	// 获取用户输入
+	// 3 查看信息
+	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
+	ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
+	//ShowStackInfo();	// 查看栈空间
+	// 4 获取用户输入
 	GetUserCommand();
 }
 // 处理模块导入事件
@@ -210,10 +204,19 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "hde"))
 		{
-			// 设置硬件执行断点
+			// 获取要设置的地址、类型
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
-			BreakPoint::SetDRXBreakPoint(m_threadHandle, addr, 0, 0);
+			BreakPoint::SetDrxExeBreakPoint(m_threadHandle, (DWORD)addr);// 执行断点时，rw=0，len=0
+		}
+		else if (!strcmp(input, "hdr"))
+		{
+			// 获取要设置的地址、类型
+			LPVOID addr = 0;
+			int len = 0;
+			scanf_s("%x", &addr);
+			scanf_s("%d", &len);
+			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len-1);// 读写断点时，rw=1,len 自定
 		}
 		else
 		{
@@ -258,7 +261,8 @@ void Debugger::ShowCommandMenu()
 	printf("g:      \t继续执行\n");
 	printf("p:      \t设置单步断点\n");
 	printf("bp-addr:\t设置软件断点\n");
-	printf("hde-addr:\t设置硬件断点\n");
+	printf("hde-addr:\t设置硬件执行断点\n");
+	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
 	printf("mem-addr:\t设置内存访问断点\n");
 	printf("u-addr-lines:\t查看汇编指令\n");
 	printf("mu-addr-buff:\t修改汇编指令\n");
