@@ -7,7 +7,7 @@ int main()
 	Debugger debugger;
 	// 2 建立调试会话
 	debugger.Open("demo.exe");
-	// 3接收并处理调试信息
+	// 3 接收并处理调试信息
 	debugger.Run();
 	return 0;
 }

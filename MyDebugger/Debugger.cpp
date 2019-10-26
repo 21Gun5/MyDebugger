@@ -90,6 +90,7 @@ void Debugger::Run()
 		ContinueDebugEvent(m_debugEvent.dwProcessId,m_debugEvent.dwThreadId,m_continueStatus);
 	}
 }
+
 // 处理异常事件
 void Debugger::OnExceptionEvent()
 {
@@ -133,7 +134,7 @@ void Debugger::OnExceptionEvent()
 	// 查看反汇编代码（eip处，而非异常发生处
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);
 	// 查看寄存器信息
-	ShowRegisterInfo();
+	ShowRegisterInfo(m_threadHandle);
 	// 查看栈空间
 	ShowStackInfo();
 	// 获取用户输入
@@ -152,50 +153,58 @@ void Debugger::OnLoadDLLEvent()
 void Debugger::GetUserCommand()
 {
 	char input[0x100] = { 0 };
-
 	while (true)
 	{
-		// 显示支持的命令
+		// 1 显示支持的命令
 		ShowCommandMenu();
-		// 获取指令，指令应该是事先考虑好的
 		printf(">>> ");
+		// 2 获取指令，指令应该是事先考虑好的
 		scanf_s("%s", input, 0x100);
-		// 继续执行，直到运行结束或遇到下一个异常
+		// 3 分别执行不同的指令
 		if (!strcmp(input, "g"))
 		{
+			// 继续执行，直到运行结束或遇到下一个异常
 			break;
 		}
-		// 查看汇编指令
+		else if (!strcmp(input, "test"))
+		{
+			//ModifyRegister(m_threadHandle);
+		}
 		else if (!strcmp(input, "u"))
 		{
+			// 查看汇编指令
 			int addr = 0, lines = 0;
 			scanf_s("%x %d", &addr, &lines);
 			Capstone::DisAsm(m_processHandle, (LPVOID)addr, lines);
 		}
-		// 修改汇编指令
 		else if (!strcmp(input, "mu"))
 		{
+			// 修改汇编指令
 			LPVOID addr = 0;
 			char buff[0x10] = { 0 };
 			scanf_s("%x", &addr);
 			scanf_s("%s", buff,0x10);
 			ModifyAssemble(m_processHandle, addr, buff);
 		}
-		// test
-		else if (!strcmp(input, "test"))
+		else if (!strcmp(input, "mr"))
 		{
-			ModifyRegister(m_processHandle);
+			// 修改寄存器
+			char regis[10] = { 0 };
+			LPVOID buff = 0;
+			scanf_s("%s", regis,10);
+			scanf_s("%x", &buff);
+			ModifyRegister(m_threadHandle,regis,buff);
 		}
-		// 设置int3软件断点
 		else if (!strcmp(input, "bp"))
 		{
+			// 设置int3软件断点
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
 			BreakPoint::SetCCBreakPoint(m_processHandle, addr);
 		}
-		// 设置TF单步断点
 		else if (!strcmp(input, "p"))
 		{
+			// 设置TF单步断点
 			BreakPoint::SetTFBreakPoint(m_threadHandle);
 			break;
 		}
@@ -209,15 +218,16 @@ void Debugger::GetUserCommand()
 		else
 		{
 			printf("指令输入错误\n");
-		}
+		}		
 	}
 }
-// 查看寄存器信息
-void Debugger::ShowRegisterInfo()
+
+// 显示寄存器信息
+void Debugger::ShowRegisterInfo(HANDLE thread_handle)
 {
 	CONTEXT ct = { 0 };
 	ct.ContextFlags = CONTEXT_CONTROL;// 加此标识（什么类型的环境
-	GetThreadContext(m_threadHandle, &ct);
+	GetThreadContext(thread_handle, &ct);
 	printf("=============================== 寄存器信息 =================================\n");
 	printf("数据寄存器：       EAX:%08X  EBX:%08X  ECX:%08X  EDX:%08X\n", ct.Eax, ct.Ebx, ct.Ecx, ct.Edx);
 	printf("段寄存器：         ECS:%08X  EDS:%08X  ESS:%08X  EES:%08X\n", ct.SegCs, ct.SegDs, ct.SegEs, ct.SegEs);
@@ -226,7 +236,7 @@ void Debugger::ShowRegisterInfo()
 	printf("指令指针寄存器：   EIP:%08X\n", ct.Eip);
 	printf("标志寄存器：       EFLAGS:%08X\n", ct.EFlags);
 }
-// 查看栈空间信息
+// 显示栈空间信息
 void Debugger::ShowStackInfo()
 {
 	CONTEXT ct = { 0 };
@@ -252,6 +262,7 @@ void Debugger::ShowCommandMenu()
 	printf("mem-addr:\t设置内存访问断点\n");
 	printf("u-addr-lines:\t查看汇编指令\n");
 	printf("mu-addr-buff:\t修改汇编指令\n");
+	printf("mr-regi-buff:\t修改寄存器环境\n");
 }
 // 显示模块信息（from CV
 bool Debugger::ShowLoadDLL(HANDLE hFile)
@@ -333,6 +344,7 @@ bool Debugger::ShowLoadDLL(HANDLE hFile)
 	return bSuccess;
 }
 
+// 修改汇编代码
 void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 {
 	// 应该修改反汇编代码，而非机器指令，暂搁置
@@ -341,18 +353,45 @@ void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 	//strcpy_s(buff,0x10,"\xCC");
 	//WriteProcessMemory(process_handle, addr, buff, 1, NULL);
 }
-
-void Debugger::ModifyRegister(HANDLE thread_handle)
+// 修改寄存器
+void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)
 {
-	// 为何修改不成功？有多个线程
+	// 获取寄存器环境
 	CONTEXT context = { CONTEXT_CONTROL };
 	GetThreadContext(thread_handle, &context);
-	context.Eip = 0x1000;
+	// 判断修改的哪个寄存器
+	if (!strcmp(regis, "eip"))
+		printf("不能直接修改EIP\n");
+	else if (!strcmp(regis, "eax"))
+		context.Eax = (DWORD)buff;
+	else if (!strcmp(regis, "ebx"))
+		context.Ebx = (DWORD)buff;
+	else if (!strcmp(regis, "ecx"))
+		context.Ecx = (DWORD)buff;
+	else if (!strcmp(regis, "edx"))
+		context.Edx = (DWORD)buff;
+	else if (!strcmp(regis, "ecs"))
+		context.SegCs = (DWORD)buff;
+	else if (!strcmp(regis, "eds"))
+		context.SegDs = (DWORD)buff;
+	else if (!strcmp(regis, "ess"))
+		context.SegSs = (DWORD)buff;
+	else if (!strcmp(regis, "ees"))
+		context.SegEs = (DWORD)buff;
+	else if (!strcmp(regis, "ebp"))
+		context.Ebp = (DWORD)buff;
+	else if (!strcmp(regis, "esp"))
+		context.Esp = (DWORD)buff;
+	else if (!strcmp(regis, "eflags"))
+		context.EFlags = (DWORD)buff;
+	else
+		printf("暂不支持修改此寄存器\n");
+	// 修改寄存器
 	SetThreadContext(thread_handle, &context);
-
-	ShowRegisterInfo();
+	// 再次显示来证明修改成功
+	ShowRegisterInfo(thread_handle);
 }
-
+// 修改栈内存
 void Debugger::ModifyStack()
 {
 }

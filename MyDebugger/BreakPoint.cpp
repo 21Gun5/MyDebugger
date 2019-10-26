@@ -53,15 +53,9 @@ void BreakPoint::FixCCBreakPoint(HANDLE process_handle, HANDLE thread_handle, LP
 // 设置TF单步断点
 void BreakPoint::SetTFBreakPoint(HANDLE thread_handle)
 {
-	// 单步断点: 通过 CPU 中 efalgs 提供的 TF 标志位
-	// 完成的。当CPU在执行指令之后，会检查当前的 TF 位
-	// 是否开启，如果开启了，就会触发一个单步异常，并且
-	// 会将 TF 标志位重新置 0。
-
-	// 1. 获取到寄存器信息
 	CONTEXT context = { CONTEXT_CONTROL };
 	GetThreadContext(thread_handle, &context);
-	context.EFlags |= 0x100;		// 0x1[8]0[7654]0[3210]
+	context.EFlags |= 0x100;		// 0x1[8]0[7654]0[3210]，TF位于8
 	SetThreadContext(thread_handle, &context);
 }
 // 设置/修复 DRX硬件断点

@@ -20,13 +20,14 @@ private:
 	void OnLoadDLLEvent();			// 处理模块导入事件
 
 	void GetUserCommand();			// 获取用户输入的命令
-	void ShowRegisterInfo();		// 显示寄存器信息
+
+	void ShowRegisterInfo(HANDLE thread_handle);		// 显示寄存器信息
 	void ShowStackInfo();			// 显示栈空间信息
 	void ShowCommandMenu();			// 显示支持的命令
 	bool ShowLoadDLL(HANDLE hFile);	// 显示模块信息
 
 	void ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff);			// 修改汇编指令
-	void ModifyRegister(HANDLE thread_handle);			// 修改寄存器
+	void ModifyRegister(HANDLE thread_handle, char * regis, LPVOID  buff);			// 修改寄存器
 	void ModifyStack();				// 修改栈
 
 
