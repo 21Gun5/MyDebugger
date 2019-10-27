@@ -94,20 +94,45 @@ void Debugger::OnExceptionEvent()
 	// 1 获取异常类型、发生地址
 	DWORD exceptionCode = m_debugEvent.u.Exception.ExceptionRecord.ExceptionCode;
 	LPVOID exceptionAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionAddress;
-	printf("\n================================ 异常信息 ==================================\n");
-	printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 	// 2 处理不同的异常类型
 	switch (exceptionCode)
 	{
-	// 1 单步异常：DRx硬件断点
+	// 1 单步异常：DRx硬件断点、TF单步断点都在这
 	case EXCEPTION_SINGLE_STEP:
-	{	
-		BreakPoint::FixDrxBreakPoint(m_threadHandle);
+	{
+		switch (m_singleStepType)
+		{
+		case Debugger::NORMAL:
+			printf("\n================================ 异常信息 ==================================\n");
+			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
+			printf("详情: 单步断点发生\n");
+			break;
+		case Debugger::DRXEXE:
+			printf("\n================================ 异常信息 ==================================\n");
+			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
+			printf("详情: 硬件执行断点发生\n");
+			BreakPoint::FixDrxBreakPoint(m_threadHandle);
+			break;
+		case Debugger::DRXRW:
+			printf("\n================================ 异常信息 ==================================\n");
+			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
+			printf("详情: 硬件读写断点发生\n");
+			BreakPoint::FixDrxBreakPoint(m_threadHandle);
+			break;
+		case Debugger::MEMEXE:
+			DWORD dwTempProtect;
+			VirtualProtectEx(m_processHandle, m_memBreakPointAddr, 1, PAGE_NOACCESS, &dwTempProtect);
+			return;
+		default:
+			break;
+		}
 		break;
 	}
 	// 2 断点异常: int3软件断点
 	case EXCEPTION_BREAKPOINT:
 	{
+		printf("\n================================ 异常信息 ==================================\n");
+		printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 		// 系统断点发生（其为0则没发生，发生后则作标记
 		if (!m_isSysBPHappened)
 		{
@@ -123,8 +148,22 @@ void Debugger::OnExceptionEvent()
 	}
 	// 3 访问异常：内存访问断点
 	case EXCEPTION_ACCESS_VIOLATION:
-		printf("详情: 内存访问断点发生\n");
-		break;
+	{
+		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
+		// 如果找到地址，则打印信息，break
+		if(isFind)
+		{
+			printf("\n================================ 异常信息 ==================================\n");
+			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
+			printf("详情: 内存执行断点发生\n");
+			break;
+		}
+		// 如果没找到，则return回去继续找
+		else
+		{
+			return;
+		}
+	}
 	}
 	// 3 查看信息
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
@@ -161,9 +200,13 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "test"))
 		{
-			// 设置TF单步步过断点
-			BreakPoint::SetStepByBreakPoint(m_processHandle,m_threadHandle);
-			break;// 要break，结束本次，以解除上面函数中的int3断点
+			// 获取要设置的地址
+			LPVOID addr = 0;
+			scanf_s("%x", &addr);
+			BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle,addr);
+			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
+			//m_isMemBreakPoint = true;//标识单步断点是设置内存断点时用到的，而非普通的
+			m_singleStepType = MEMEXE;
 		}
 		else if (!strcmp(input, "u"))
 		{
@@ -201,6 +244,7 @@ void Debugger::GetUserCommand()
 		{
 			// 设置TF单步断点
 			BreakPoint::SetTFStepIntoBreakPoint(m_threadHandle);
+			m_singleStepType = NORMAL;
 			break;
 		}
 		else if (!strcmp(input, "t"))
@@ -211,10 +255,11 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "hde"))
 		{
-			// 获取要设置的地址、类型
+			// 获取要设置的地址
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
 			BreakPoint::SetDrxExeBreakPoint(m_threadHandle, (DWORD)addr);// 执行断点时，rw=0，len=0
+			m_singleStepType = DRXEXE;
 		}
 		else if (!strcmp(input, "hdr"))
 		{
@@ -224,6 +269,7 @@ void Debugger::GetUserCommand()
 			scanf_s("%x", &addr);
 			scanf_s("%d", &len);
 			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len-1);// 读写断点时，rw=1,len 自定
+			m_singleStepType = DRXRW;
 		}
 		else
 		{

@@ -1,6 +1,10 @@
-﻿  BreakPoint.cpp
-c:\users\ry1yn\source\repos\15pb\mydebugger\breakpoint.cpp(56): warning C4018: “<”: 有符号/无符号不匹配
-  Capstone.cpp
-c:\users\ry1yn\source\repos\15pb\mydebugger\capstone.cpp(38): warning C4018: “<”: 有符号/无符号不匹配
+﻿  Debugger.cpp
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(205): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(223): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(233): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(240): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(260): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(269): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+  main.cpp
   正在生成代码...
   MyDebugger.vcxproj -> C:\Users\ry1yn\source\repos\15PB\Debug\MyDebugger.exe

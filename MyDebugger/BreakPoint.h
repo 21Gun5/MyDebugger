@@ -3,12 +3,18 @@
 #include <vector>
 using namespace std;
 
-// 断点信息结构体
+// 软件断点信息结构体
 typedef struct _BREAKPOINTINFO
 {
 	LPVOID addr = 0;		// 地址
 	BYTE oldOpcode = 0;		// 原机器指令，用于恢复
 } BREAKPOINTINFO, *PBREAKPOINTINFO;
+// 内存断点信息结构体
+typedef struct _MEMBREAKPOINTINFO
+{
+	LPVOID addr = 0;		// 地址
+	DWORD  oldAttribute;
+} MEMBREAKPOINTINFO, *PMEMBREAKPOINTINFO;
 // DR7 寄存器结构体
 typedef struct _DBG_REG7
 {
@@ -28,8 +34,8 @@ typedef struct _DBG_REG7
 class BreakPoint
 {
 private:
-	// 断点列表，保存所有的int3软件断点
-	static vector<BREAKPOINTINFO> breakPointList;
+	static vector<BREAKPOINTINFO> breakPointList;// int3软件断点列表
+	static MEMBREAKPOINTINFO m_memBreakPoint;// 内存断点
 public:
 	// 设置TF单步步入/单步步过断点
 	static void SetTFStepIntoBreakPoint(HANDLE thread_handle);
@@ -42,5 +48,8 @@ public:
 	static void FixDrxBreakPoint(HANDLE thread_handle);
 	// 设置/修复 DRX硬件读写断点
 	static void SetDrxRwBreakPoint(HANDLE thread_handle, DWORD addr, int len);
+	// 设置内存执行断点
+	static void SetMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
+	static bool WhenMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
 };
 

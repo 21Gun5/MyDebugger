@@ -9,6 +9,9 @@ private:
 	HANDLE m_threadHandle = NULL;			// 异常产生的线程的句柄
 	HANDLE m_processHandle = NULL;			// 异常产生的进程的句柄
 	bool m_isSysBPHappened = false;			// 第一个异常事件，即系统断点是否触发
+
+	LPVOID m_memBreakPointAddr = 0;// 设置内存断点的位置，因为要多次设置，故保存下来
+	enum Type { NORMAL, DRXEXE, DRXRW, MEMEXE }m_singleStepType;// 多个事件可触发单步异常，普通的、硬件执行/读写、软件执行
 public:
 	void Open(LPCSTR filePath);		// 打开被调试进程
 	void Run();						// 处理调试事件
