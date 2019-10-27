@@ -31,8 +31,9 @@ private:
 	// 断点列表，保存所有的int3软件断点
 	static vector<BREAKPOINTINFO> breakPointList;
 public:
-	// 设置TF单步断点
-	static void SetTFBreakPoint(HANDLE thread_handle);
+	// 设置TF单步步入/单步步过断点
+	static void SetTFStepIntoBreakPoint(HANDLE thread_handle);
+	static void SetStepByBreakPoint(HANDLE process_handle, HANDLE thread_handle);
 	// 设置/修复 int3-CC软件断点
 	static void SetCCBreakPoint(HANDLE process_handle, LPVOID addr);
 	static void FixCCBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);

@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "Debugger.h"
 #include "Capstone.h"
 #include "BreakPoint.h"
@@ -129,7 +128,7 @@ void Debugger::OnExceptionEvent()
 	}
 	// 3 查看信息
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
-	ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
+	//ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
 	//ShowStackInfo();	// 查看栈空间
 	// 4 获取用户输入
 	GetUserCommand();
@@ -162,7 +161,9 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "test"))
 		{
-			//ModifyRegister(m_threadHandle);
+			// 设置TF单步步过断点
+			BreakPoint::SetStepByBreakPoint(m_processHandle,m_threadHandle);
+			break;// 要break，结束本次，以解除上面函数中的int3断点
 		}
 		else if (!strcmp(input, "u"))
 		{
@@ -199,8 +200,14 @@ void Debugger::GetUserCommand()
 		else if (!strcmp(input, "p"))
 		{
 			// 设置TF单步断点
-			BreakPoint::SetTFBreakPoint(m_threadHandle);
+			BreakPoint::SetTFStepIntoBreakPoint(m_threadHandle);
 			break;
+		}
+		else if (!strcmp(input, "t"))
+		{
+			// 设置TF单步步过断点
+			BreakPoint::SetStepByBreakPoint(m_processHandle, m_threadHandle);
+			break;// 要break，结束本次，以解除上面函数中的int3断点
 		}
 		else if (!strcmp(input, "hde"))
 		{
@@ -259,13 +266,14 @@ void Debugger::ShowCommandMenu()
 {
 	printf("\n================================ 键入指令 ==================================\n");
 	printf("g:      \t继续执行\n");
-	printf("p:      \t设置单步断点\n");
+	printf("p:      \t单步步入\n");
+	printf("t:      \t单步步过\n");
 	printf("bp-addr:\t设置软件断点\n");
 	printf("hde-addr:\t设置硬件执行断点\n");
 	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
 	printf("mem-addr:\t设置内存访问断点\n");
 	printf("u-addr-lines:\t查看汇编指令\n");
-	printf("mu-addr-buff:\t修改汇编指令\n");
+	//printf("mu-addr-buff:\t修改汇编指令\n");
 	printf("mr-regi-buff:\t修改寄存器环境\n");
 }
 // 显示模块信息（from CV

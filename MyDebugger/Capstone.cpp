@@ -20,7 +20,6 @@ void Capstone::Init()
 	cs_open(CS_ARCH_X86, CS_MODE_32, &Capstone::Handle);
 }
 
-
 // 反汇编指定条数的语句
 void Capstone::DisAsm(HANDLE Handle, LPVOID Addr, DWORD Count)
 {
@@ -38,19 +37,41 @@ void Capstone::DisAsm(HANDLE Handle, LPVOID Addr, DWORD Count)
 	printf("\n=============================== 反汇编代码 =================================\n");
 	for (DWORD i = 0; i < Count && i < count; ++i)
 	{
-		printf("%08X\t", (UINT)ins[i].address);
+		printf("%08X\t", (UINT)ins[i].address);// 地址
 		for (uint16_t j = 0; j < 16; ++j)
 		{
 			if (j < ins[i].size)
-				printf("%02X", ins[i].bytes[j]);
+				printf("%02X", ins[i].bytes[j]);// 机器指令
 			else
-				printf("  ");
+				printf(" ");
 		}
-		// 输出对应的反汇编
-		printf("\t%s %s\n", ins[i].mnemonic, ins[i].op_str);
+		printf("\t%s %s\n", ins[i].mnemonic, ins[i].op_str);// 汇编代码
 	}
 	printf("\n");
 	// 释放动态分配的空间
 	delete[] buff;
 	cs_free(ins, count);
+}
+
+int Capstone::GetCallCodeLen(HANDLE Handle, LPVOID Addr)
+{
+	// 用来读取指令位置内存的缓冲区信息
+	cs_insn* ins = nullptr;
+	PCHAR buff = new CHAR[16]{ 0 };
+	// 读取指定长度的内存空间
+	DWORD dwWrite = 0;
+	ReadProcessMemory(Handle, (LPVOID)Addr, buff, 16, &dwWrite);
+	int count = cs_disasm(Capstone::Handle, (uint8_t*)buff, 16, (uint64_t)Addr, 0, &ins);
+	// 判断是否是call指令,不是则长度为-1
+	int callLen = -1;
+	if(!strcmp(ins[0].mnemonic,"call"))
+	{
+		// 获取call指令的长度，首地址+长度即下一条指令地址
+		callLen = ins[0].size;
+	}
+	// 释放动态分配的空间
+	delete[] buff;
+	cs_free(ins, count);
+	// 返回
+	return callLen;
 }

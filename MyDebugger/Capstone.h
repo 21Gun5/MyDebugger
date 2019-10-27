@@ -26,5 +26,7 @@ public:
 
 	// 用于执行反汇编的函数
 	static void DisAsm(HANDLE Handle, LPVOID Addr, DWORD Count);
+
+	static int GetCallCodeLen(HANDLE Handle, LPVOID Addr);
 };
 

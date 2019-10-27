@@ -1,14 +1,41 @@
 #include "BreakPoint.h"
+#include "Capstone.h"
 
 // 断点列表，保存所有的断点信息
 vector<BREAKPOINTINFO> BreakPoint::breakPointList;
 // 设置TF单步断点，系统自动修复
-void BreakPoint::SetTFBreakPoint(HANDLE thread_handle)
+void BreakPoint::SetTFStepIntoBreakPoint(HANDLE thread_handle)
 {
 	CONTEXT context = { CONTEXT_CONTROL };
 	GetThreadContext(thread_handle, &context);
 	context.EFlags |= 0x100;		// 0x1[8]0[7654]0[3210]，TF位于8
 	SetThreadContext(thread_handle, &context);
+}
+void BreakPoint::SetStepByBreakPoint(HANDLE process_handle,HANDLE thread_handle)
+{
+	//76FF57E0        56                      push esi
+	//76FF57E1        662188CA0F0000          and word ptr[eax + 0xfca], cx
+	//76FF57E8        E81308FEFF              call 0x76fd6000
+	//76FF57ED        832518DC0B7700          and dword ptr[0x770bdc18], 0
+
+	// 1 获取当前EIP
+	CONTEXT context = { CONTEXT_CONTROL };
+	GetThreadContext(thread_handle, &context);
+	DWORD callAddr = context.Eip;
+	// 2 获取call指令长度
+	int callLen =  Capstone::GetCallCodeLen(process_handle, LPVOID(callAddr));// 查看反汇编代码（eip处，而非异常发生处
+	// 3 判断是否是call，是则步过
+	if (callLen != -1)
+	{
+		// 4 当前地址+长度=下一条指令地址，随即下int3断点
+		LPVOID addr = LPVOID(callAddr + callLen);
+		BreakPoint::SetCCBreakPoint(process_handle, addr);
+	}
+	// 5 不是call，则正常的一步步走
+	else
+	{
+		BreakPoint::SetTFStepIntoBreakPoint(thread_handle);
+	}
 }
 // 设置/修复 int3-CC软件断点
 void BreakPoint::SetCCBreakPoint(HANDLE process_handle, LPVOID addr)
@@ -161,10 +188,9 @@ void BreakPoint::FixDrxBreakPoint(HANDLE thread_handle)
 	SetThreadContext(thread_handle, &context);
 }
 
-
 // 内存断点: 基于分页属性设置的断点.当一个分页的数据不可读写
 // 时,会触发设备访问异常. 当将一个地址设置为不可访问后,他所在
-// 的整个分页就都不可访问了.此时可以通过异常结构中的 infomation 
+// 的整个分页就都不可访问了.此时可以通过异常结构中的 information 
 // 获取到断下的原因(0,1,8),第二个参数是产生异常的地址,使用这个
 // 参数和设置的断点位置进行比较,可以找到这个断点. 如果不是我们需
 // 要断下的地方,就需要恢复内存访问属性,并且单步执行一次后重新设置
