@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Debugger.h"
 #include "Capstone.h"
+#include "Keystone.h"
 #include "BreakPoint.h"
 #include <stdio.h>
 #include <psapi.h>
@@ -149,12 +150,7 @@ void Debugger::OnExceptionEvent()
 	// 3 访问异常：内存访问断点
 	case EXCEPTION_ACCESS_VIOLATION:
 	{
-		/*
-		举例：demo.exe
-			mem 778ddc7c 写入断点
-			mem 778dda44 读取断点
-			mem 7786e9e6 执行断点
-		*/
+
 		DWORD type = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[0];//触发类型0/1/8
 		DWORD memAccessAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[1];//触发地址
 		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle,LPVOID(memAccessAddr));
@@ -238,11 +234,17 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "mu"))
 		{
+			/* 示例：
+			mu 7786e9e3 mov ecx,1; B901000000
+			mu push eax; 50
+			*/
+
 			// 修改汇编指令
 			LPVOID addr = 0;
-			char buff[0x10] = { 0 };
+			char buff[0x100] = { 0 };
 			scanf_s("%x", &addr);
-			scanf_s("%s", buff,0x10);
+			gets_s(buff);
+			//scanf_s("%s", buff,0x10);
 			ModifyAssemble(m_processHandle, addr, buff);
 		}
 		else if (!strcmp(input, "mr"))
@@ -294,6 +296,12 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "mem"))
 		{
+			/*举例：demo.exe
+				mem 778ddc7c 写入断点
+				mem 778dda44 读取断点
+				mem 7786e9e6 执行断点
+			*/
+
 			// 获取要设置的地址
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
@@ -349,7 +357,7 @@ void Debugger::ShowCommandMenu()
 	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
 	printf("mem-addr:\t设置内存执行/读/写断点\n");
 	printf("u-addr-lines:\t查看汇编指令\n");
-	//printf("mu-addr-buff:\t修改汇编指令\n");
+	printf("mu-addr-buff:\t修改汇编指令\n");
 	printf("mr-regi-buff:\t修改寄存器环境\n");
 }
 // 显示模块信息（from CV
@@ -435,11 +443,7 @@ bool Debugger::ShowLoadDLL(HANDLE hFile)
 // 修改汇编代码
 void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 {
-	// 应该修改反汇编代码，而非机器指令，暂搁置
-
-	// 向目标进程的地址写入指定的字节
-	//strcpy_s(buff,0x10,"\xCC");
-	//WriteProcessMemory(process_handle, addr, buff, 1, NULL);
+	Keystone::Asm(process_handle,addr, buff);
 }
 // 修改寄存器
 void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)

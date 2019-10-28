@@ -27,6 +27,9 @@
     <ClCompile Include="BreakPoint.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Keystone.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debugger.h">
@@ -36,6 +39,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="BreakPoint.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Keystone.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

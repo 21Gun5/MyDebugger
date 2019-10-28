@@ -118,12 +118,14 @@
     <ClCompile Include="BreakPoint.cpp" />
     <ClCompile Include="Capstone.cpp" />
     <ClCompile Include="Debugger.cpp" />
+    <ClCompile Include="Keystone.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BreakPoint.h" />
     <ClInclude Include="Capstone.h" />
     <ClInclude Include="Debugger.h" />
+    <ClInclude Include="Keystone.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
