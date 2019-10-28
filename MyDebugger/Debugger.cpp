@@ -119,7 +119,7 @@ void Debugger::OnExceptionEvent()
 			printf("详情: 硬件读写断点发生\n");
 			BreakPoint::FixDrxBreakPoint(m_threadHandle);
 			break;
-		case Debugger::MEMEXE:
+		case Debugger::MEM:
 			DWORD dwTempProtect;
 			VirtualProtectEx(m_processHandle, m_memBreakPointAddr, 1, PAGE_NOACCESS, &dwTempProtect);
 			return;
@@ -149,13 +149,35 @@ void Debugger::OnExceptionEvent()
 	// 3 访问异常：内存访问断点
 	case EXCEPTION_ACCESS_VIOLATION:
 	{
-		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
+		/*
+		举例：demo.exe
+			mem 778ddc7c 写入断点
+			mem 778dda44 读取断点
+			mem 7786e9e6 执行断点
+		*/
+		DWORD type = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[0];//触发类型0/1/8
+		DWORD memAccessAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[1];//触发地址
+		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle,LPVOID(memAccessAddr));
 		// 如果找到地址，则打印信息，break
 		if(isFind)
 		{
 			printf("\n================================ 异常信息 ==================================\n");
-			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
-			printf("详情: 内存执行断点发生\n");
+			printf("类型: %08X\n地址: %p\n", exceptionCode, memAccessAddr);
+			// 打印具体类型
+			switch (type)
+			{
+			case 0:
+				printf("详情: 内存读取断点发生\n");
+				break;
+			case 1:
+				printf("详情: 内存写入断点发生\n");
+				break;
+			case 8:
+				printf("详情: 内存执行断点发生\n");
+				break;
+			default:
+				break;
+			}
 			break;
 		}
 		// 如果没找到，则return回去继续找
@@ -200,13 +222,12 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "test"))
 		{
-			// 获取要设置的地址
-			LPVOID addr = 0;
-			scanf_s("%x", &addr);
-			BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle,addr);
-			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
-			//m_isMemBreakPoint = true;//标识单步断点是设置内存断点时用到的，而非普通的
-			m_singleStepType = MEMEXE;
+			//// 获取要设置的地址
+			//LPVOID addr = 0;
+			//scanf_s("%x", &addr);
+			//BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
+			//m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
+			//m_singleStepType = MEMEXE;
 		}
 		else if (!strcmp(input, "u"))
 		{
@@ -247,7 +268,7 @@ void Debugger::GetUserCommand()
 			m_singleStepType = NORMAL;
 			break;
 		}
-		else if (!strcmp(input, "t"))
+		else if (!strcmp(input, "pp"))
 		{
 			// 设置TF单步步过断点
 			BreakPoint::SetStepByBreakPoint(m_processHandle, m_threadHandle);
@@ -270,6 +291,15 @@ void Debugger::GetUserCommand()
 			scanf_s("%d", &len);
 			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len-1);// 读写断点时，rw=1,len 自定
 			m_singleStepType = DRXRW;
+		}
+		else if (!strcmp(input, "mem"))
+		{
+			// 获取要设置的地址
+			LPVOID addr = 0;
+			scanf_s("%x", &addr);
+			BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
+			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
+			m_singleStepType = MEM;
 		}
 		else
 		{
@@ -313,11 +343,11 @@ void Debugger::ShowCommandMenu()
 	printf("\n================================ 键入指令 ==================================\n");
 	printf("g:      \t继续执行\n");
 	printf("p:      \t单步步入\n");
-	printf("t:      \t单步步过\n");
+	printf("pp:      \t单步步过\n");
 	printf("bp-addr:\t设置软件断点\n");
 	printf("hde-addr:\t设置硬件执行断点\n");
 	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
-	printf("mem-addr:\t设置内存访问断点\n");
+	printf("mem-addr:\t设置内存执行/读/写断点\n");
 	printf("u-addr-lines:\t查看汇编指令\n");
 	//printf("mu-addr-buff:\t修改汇编指令\n");
 	printf("mr-regi-buff:\t修改寄存器环境\n");

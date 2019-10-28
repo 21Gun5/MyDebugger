@@ -1,10 +1,56 @@
 ﻿  Debugger.cpp
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(205): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(223): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(233): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(240): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(260): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(269): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(166): warning C4477: “printf”: 格式字符串“%p”需要类型“void *”的参数，但可变参数 2 拥有了类型“DWORD”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(245): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(255): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(262): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(282): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(291): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(300): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
   main.cpp
   正在生成代码...
+capstone.lib(AArch64BaseInfo.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(AArch64BaseInfo.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(AArch64Disassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(AArch64Disassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(AArch64InstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(AArch64InstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(AArch64Mapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(AArch64Mapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(AArch64Module.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(AArch64Module.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(ARMDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(ARMDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(ARMInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(ARMInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(ARMMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(ARMMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(ARMModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(ARMModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(M68KDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(M68KDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(M68KInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(M68KInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(M68KModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(M68KModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MipsDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MipsDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MipsInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MipsInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MipsMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MipsMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MipsModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MipsModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(PPCDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(PPCDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(PPCInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(PPCInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(PPCMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(PPCMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(PPCModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(PPCModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SparcDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SparcDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SparcInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SparcInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SparcMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SparcMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SparcModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SparcModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SystemZDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SystemZDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SystemZInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SystemZInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SystemZMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SystemZMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SystemZMCTargetDesc.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SystemZMCTargetDesc.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SystemZModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SystemZModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86ATTInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86ATTInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86Disassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86Disassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86DisassemblerDecoder.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86DisassemblerDecoder.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86IntelInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86IntelInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86Mapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86Mapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(X86Module.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(X86Module.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(XCoreInstPrinter.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(XCoreInstPrinter.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(XCoreDisassembler.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(XCoreDisassembler.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(XCoreMapping.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(XCoreMapping.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(XCoreModule.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(XCoreModule.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(cs.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(cs.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MCInst.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MCInst.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MCInstrDesc.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MCInstrDesc.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(MCRegisterInfo.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(MCRegisterInfo.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(SStream.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(SStream.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+capstone.lib(utils.obj) : warning LNK4099: 未找到 PDB“capstone_static.pdb”(使用“capstone.lib(utils.obj)”或在“C:\Users\ry1yn\source\repos\15PB\Debug\capstone_static.pdb”中寻找)；正在链接对象，如同没有调试信息一样
   MyDebugger.vcxproj -> C:\Users\ry1yn\source\repos\15PB\Debug\MyDebugger.exe
