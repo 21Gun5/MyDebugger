@@ -48,8 +48,10 @@ public:
 	static void FixDrxBreakPoint(HANDLE thread_handle);
 	// 设置/修复 DRX硬件读写断点
 	static void SetDrxRwBreakPoint(HANDLE thread_handle, DWORD addr, int len);
-	// 设置内存执行断点
+	// 内存断点相关
 	static void SetMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
 	static bool WhenMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
+	// 设置条件断点
+	static void SetConditionBreakPoint(HANDLE process_handle, LPVOID addr);
 };
 

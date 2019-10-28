@@ -25,7 +25,7 @@ void Debugger::CloseHandles()
 void Debugger::Open(LPCSTR file_Path)
 {
 	// 如果进程创建成功，用于接收进程线程的句柄和id
-	PROCESS_INFORMATION processInfo = { 0 };
+	//PROCESS_INFORMATION processInfo = { 0 };
 	STARTUPINFOA startupInfo = { sizeof(STARTUPINFOA) };
 
 	// 调试方式创建进程，得到被调试进程
@@ -33,7 +33,7 @@ void Debugger::Open(LPCSTR file_Path)
 		DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE,
 		NULL, NULL, 
 		&startupInfo, //指定进程的主窗口特性
-		&processInfo);//接收新进程的信息
+		&m_processInfo);//接收新进程的信息
 
 	// DEBUG_PROCESS 表示以调试的方式打开目标进程，并且
 	//	当被调试创建新的进程时，同样接收新进程的调试信息。
@@ -45,8 +45,8 @@ void Debugger::Open(LPCSTR file_Path)
 	// 如果进程创建成功了，就关闭对应的句柄，防止句柄泄露
 	if (result == TRUE)
 	{
-		CloseHandle(processInfo.hThread);
-		CloseHandle(processInfo.hProcess);
+		CloseHandle(m_processInfo.hThread);
+		CloseHandle(m_processInfo.hProcess);
 	}
 
 	// 初始化反汇编引擎，必须在使用反汇编的函数前调用
@@ -70,10 +70,12 @@ void Debugger::Run()
 		case EXCEPTION_DEBUG_EVENT:     
 			OnExceptionEvent();
 			break;
-		// 模块导入事件
-		case LOAD_DLL_DEBUG_EVENT:
-			OnLoadDLLEvent();
-			break;
+
+		//// 模块导入事件
+		//case LOAD_DLL_DEBUG_EVENT:
+		//	//OnLoadDLLEvent();
+		//	break;
+
 		}
 		// 为了防止句柄泄露，应该关闭
 		CloseHandles();
@@ -190,18 +192,20 @@ void Debugger::OnExceptionEvent()
 	// 4 获取用户输入
 	GetUserCommand();
 }
-// 处理模块导入事件
-void Debugger::OnLoadDLLEvent()
-{
-	// 获取dll文件的句柄
-	HANDLE hFile = m_debugEvent.u.LoadDll.hFile;
-	// 显示导入的模块（通过句柄获取路径
-	ShowLoadDLL(hFile);
-}
+
+//// 处理模块导入事件
+//void Debugger::OnLoadDLLEvent()
+//{
+//	// 获取dll文件的句柄
+//	//HANDLE hFile = m_debugEvent.u.LoadDll.hFile;
+//	// 显示导入的模块（通过句柄获取路径
+//	GetNameFromHandle(m_debugEvent.u.LoadDll);
+//}
 
 // 获取用户的输入
 void Debugger::GetUserCommand()
 {
+
 	char input[0x100] = { 0 };
 	while (true)
 	{
@@ -224,6 +228,11 @@ void Debugger::GetUserCommand()
 			//BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
 			//m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
 			//m_singleStepType = MEMEXE;
+		}
+		else if (!strcmp(input, "lm"))
+		{
+			// 显示模块信息
+			ShowModuleInfo();
 		}
 		else if (!strcmp(input, "u"))
 		{
@@ -309,6 +318,13 @@ void Debugger::GetUserCommand()
 			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
 			m_singleStepType = MEM;
 		}
+		else if (!strcmp(input, "cbp"))// condition breakpoint
+		{
+			// 设置条件断点
+			LPVOID addr = 0;
+			scanf_s("%x", &addr);
+			BreakPoint::SetConditionBreakPoint(m_processHandle, addr);
+		}
 		else
 		{
 			printf("指令输入错误\n");
@@ -352,6 +368,7 @@ void Debugger::ShowCommandMenu()
 	printf("g:      \t继续执行\n");
 	printf("p:      \t单步步入\n");
 	printf("pp:      \t单步步过\n");
+	printf("lm:	  \t查看模块信息\n");
 	printf("bp-addr:\t设置软件断点\n");
 	printf("hde-addr:\t设置硬件执行断点\n");
 	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
@@ -360,85 +377,45 @@ void Debugger::ShowCommandMenu()
 	printf("mu-addr-buff:\t修改汇编指令\n");
 	printf("mr-regi-buff:\t修改寄存器环境\n");
 }
-// 显示模块信息（from CV
-bool Debugger::ShowLoadDLL(HANDLE hFile)
+
+// 显示模块信息
+void Debugger::ShowModuleInfo()
 {
-	BOOL bSuccess = FALSE;
-	TCHAR pszFilename[MAX_PATH + 1];
-	HANDLE hFileMap;
-	// Get the file size.
-	DWORD dwFileSizeHi = 0;
-	DWORD dwFileSizeLo = GetFileSize(hFile, &dwFileSizeHi);
-	if (dwFileSizeLo == 0 && dwFileSizeHi == 0)
+	std::vector<MODULEENTRY32> moduleList;
+
+	// 获取快照句柄（遍历模块时需指定pid
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, m_processInfo.dwProcessId);
+	// 存储模块信息
+	MODULEENTRY32 mInfo = { sizeof(MODULEENTRY32) };
+	// 遍历模块
+	Module32First(hSnap, &mInfo);
+	do
 	{
-		_tprintf(TEXT("Cannot map a file with a length of zero.\n"));
-		return FALSE;
-	}
-	// Create a file mapping object.
-	hFileMap = CreateFileMapping(hFile,
-		NULL,
-		PAGE_READONLY,
-		0,
-		1,
-		NULL);
-	if (hFileMap)
+		moduleList.push_back(mInfo);
+	} while (Module32Next(hSnap, &mInfo));
+
+	printf("基址\t\t大小\t\t路径\n");
+	for (auto&i : moduleList) 
 	{
-		// Create a file mapping to get the file name.
-		void* pMem = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 1);
-		if (pMem)
-		{
-			if (GetMappedFileName(GetCurrentProcess(),
-				pMem,
-				pszFilename,
-				MAX_PATH))
-			{
-				// Translate path with device name to drive letters.
-				TCHAR szTemp[512];
-				szTemp[0] = '\0';
-				if (GetLogicalDriveStrings(512 - 1, szTemp))
-				{
-					TCHAR szName[MAX_PATH];
-					TCHAR szDrive[3] = TEXT(" :");
-					BOOL bFound = FALSE;
-					TCHAR* p = szTemp;
-					do
-					{
-						// Copy the drive letter to the template string
-						*szDrive = *p;
-						// Look up each device name
-						if (QueryDosDevice(szDrive, szName, MAX_PATH))
-						{
-							size_t uNameLen = _tcslen(szName);
-							if (uNameLen < MAX_PATH)
-							{
-								bFound = _tcsnicmp(pszFilename, szName, uNameLen) == 0;
-								if (bFound && *(pszFilename + uNameLen) == _T('\\'))
-								{
-									// Reconstruct pszFilename using szTempFile
-									// Replace device path with DOS path
-									TCHAR szTempFile[MAX_PATH];
-									StringCchPrintf(szTempFile,
-										MAX_PATH,
-										TEXT("%s%s"),
-										szDrive,
-										pszFilename + uNameLen);
-									StringCchCopyN(pszFilename, MAX_PATH + 1, szTempFile, _tcslen(szTempFile));
-								}
-							}
-						}
-						// Go to the next NULL character.
-						while (*p++);
-					} while (!bFound && *p); // end of string
-				}
-			}
-			bSuccess = TRUE;
-			UnmapViewOfFile(pMem);
-		}
-		CloseHandle(hFileMap);
+		printf("%08X\t%08X\t%s\n", i.modBaseAddr, i.modBaseSize, i.szExePath);
 	}
-	_tprintf(TEXT("ModuleLoaded\t%s\n"), pszFilename);
-	return bSuccess;
 }
+
+// 获取进程所有模块
+//void Debugger::GetProcessAllModule(DWORD dwPid, std::vector<MODULEENTRY32>* moduleList)
+//{
+//	// 获取快照句柄（遍历模块时需指定pid
+//	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwPid);
+//	// 存储模块信息
+//	MODULEENTRY32 mInfo = { sizeof(MODULEENTRY32) };
+//	// 遍历模块
+//	Module32First(hSnap, &mInfo);
+//	do
+//	{
+//		moduleList->push_back(mInfo);
+//	} while (Module32Next(hSnap, &mInfo));
+//}
+
 
 // 修改汇编代码
 void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
