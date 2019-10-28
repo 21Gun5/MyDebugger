@@ -225,15 +225,28 @@ bool BreakPoint::WhenMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handl
 	return isFind;
 
 }
-// 设置条件断点
-void BreakPoint::SetConditionBreakPoint(HANDLE process_handle, LPVOID addr)
+// 条件断点相关
+void BreakPoint::SetConditionBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr, int eax)
 {
-	// 0. 创建保存断点信息的结构体
-	BREAKPOINTINFO info = { addr };
-	// 1. 读取目标地址原有的OPCODE，用于恢复执行
-	ReadProcessMemory(process_handle, addr, &info.oldOpcode, 1, NULL);
-	// 2. 向目标进程的地址写入 \xcc 字节
-	WriteProcessMemory(process_handle, addr, "\xCC", 1, NULL);
-	// 3. 将设置的断点添加到链表中
-	breakPointList.push_back(info);
+	SetCCBreakPoint(process_handle, addr);
+}
+bool BreakPoint::WhenConditionBreakPoint(HANDLE process_handle, HANDLE thread_handle, int eax,LPVOID addr)
+{
+	bool isFind = false;
+
+	CONTEXT ct = { 0 };
+	ct.ContextFlags = CONTEXT_ALL;// 加此标识（什么类型的环境
+	GetThreadContext(thread_handle, &ct);
+	if (ct.Eax != eax)
+	{
+		BreakPoint::FixCCBreakPoint(process_handle, thread_handle, addr);
+		SetTFStepIntoBreakPoint(thread_handle);
+		isFind = false;
+	}
+	else
+	{
+		BreakPoint::FixCCBreakPoint(process_handle, thread_handle, addr);
+		isFind = true;
+	}
+	return isFind;
 }

@@ -52,6 +52,7 @@ public:
 	static void SetMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
 	static bool WhenMemExeBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr);
 	// 设置条件断点
-	static void SetConditionBreakPoint(HANDLE process_handle, LPVOID addr);
+	static void SetConditionBreakPoint(HANDLE process_handle, HANDLE thread_handle, LPVOID addr, int eax);
+	static bool WhenConditionBreakPoint(HANDLE process_handle, HANDLE thread_handle, int eax, LPVOID addr);
 };
 

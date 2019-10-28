@@ -13,8 +13,15 @@ int main()
 }
 
 /*
+偏移为1184a，有时会变，偏移+exe 的加载基址便得CMP的
 demo2.exe
 	main: 
-	CMP: 4c184a
-	CALL printf: 4c1859
+	CMP: 2f184a
+	CALL printf: 2f1859
+
+设置条件断点：cbp b31859 4
+demo.exe
+	mem 778ddc7c 写入断点
+	mem 778dda44 读取断点
+	mem 7786e9e6 执行断点
 */

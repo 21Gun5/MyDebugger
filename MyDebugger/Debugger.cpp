@@ -123,8 +123,13 @@ void Debugger::OnExceptionEvent()
 			BreakPoint::FixDrxBreakPoint(m_threadHandle);
 			break;
 		case Debugger::MEM:
+			// 再设置内存断点
 			DWORD dwTempProtect;
 			VirtualProtectEx(m_processHandle, m_memBreakPointAddr, 1, PAGE_NOACCESS, &dwTempProtect);
+			return;
+		case Debugger::CONDITION:
+			// 再设置条件断点，即INT3软件断点
+			BreakPoint::SetConditionBreakPoint(m_processHandle, m_threadHandle, m_ConditionBreakPointAddr, m_eax);
 			return;
 		default:
 			break;
@@ -134,6 +139,28 @@ void Debugger::OnExceptionEvent()
 	// 2 断点异常: int3软件断点
 	case EXCEPTION_BREAKPOINT:
 	{
+		if (m_isConditonSet)
+		{
+			bool isFind = BreakPoint::WhenConditionBreakPoint(m_processHandle,m_threadHandle, m_eax, LPVOID(exceptionAddr));
+
+			// 若满足条件，则打印，修复，继续执行
+			if (isFind)
+			{
+				printf("\n================================ 异常信息 ==================================\n");
+				printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
+				printf("详情: eax=%d 的条件断点发生\n",m_eax);
+				
+				m_isConditonSet = false;
+				break;
+			}
+			// 若不满足，则退出，继续
+			else
+			{
+				//BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
+				//BreakPoint::SetTFStepIntoBreakPoint(m_processHandle, exceptionAddr);
+				return;
+			}
+		}
 		printf("\n================================ 异常信息 ==================================\n");
 		printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 		// 系统断点发生（其为0则没发生，发生后则作标记
@@ -152,7 +179,6 @@ void Debugger::OnExceptionEvent()
 	// 3 访问异常：内存访问断点
 	case EXCEPTION_ACCESS_VIOLATION:
 	{
-
 		DWORD type = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[0];//触发类型0/1/8
 		DWORD memAccessAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[1];//触发地址
 		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle,LPVOID(memAccessAddr));
@@ -187,7 +213,7 @@ void Debugger::OnExceptionEvent()
 	}
 	// 3 查看信息
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
-	//ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
+	ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
 	//ShowStackInfo();	// 查看栈空间
 	// 4 获取用户输入
 	GetUserCommand();
@@ -272,6 +298,19 @@ void Debugger::GetUserCommand()
 			scanf_s("%x", &addr);
 			BreakPoint::SetCCBreakPoint(m_processHandle, addr);
 		}
+		else if (!strcmp(input, "cbp"))
+		{
+			// 获取要设置的地址、条件
+			LPVOID addr = 0;
+			int eax = 0;
+			scanf_s("%x", &addr);
+			scanf_s("%d", &eax);
+			BreakPoint::SetConditionBreakPoint(m_processHandle,m_threadHandle, addr, eax);
+			m_eax = eax;// 记录下，后续要用于对比
+			m_isConditonSet = true;
+			m_ConditionBreakPointAddr = addr;
+			m_singleStepType = CONDITION;
+		}
 		else if (!strcmp(input, "p"))
 		{
 			// 设置TF单步断点
@@ -305,12 +344,6 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "mem"))
 		{
-			/*举例：demo.exe
-				mem 778ddc7c 写入断点
-				mem 778dda44 读取断点
-				mem 7786e9e6 执行断点
-			*/
-
 			// 获取要设置的地址
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
@@ -318,13 +351,7 @@ void Debugger::GetUserCommand()
 			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
 			m_singleStepType = MEM;
 		}
-		else if (!strcmp(input, "cbp"))// condition breakpoint
-		{
-			// 设置条件断点
-			LPVOID addr = 0;
-			scanf_s("%x", &addr);
-			BreakPoint::SetConditionBreakPoint(m_processHandle, addr);
-		}
+
 		else
 		{
 			printf("指令输入错误\n");
@@ -336,7 +363,7 @@ void Debugger::GetUserCommand()
 void Debugger::ShowRegisterInfo(HANDLE thread_handle)
 {
 	CONTEXT ct = { 0 };
-	ct.ContextFlags = CONTEXT_CONTROL;// 加此标识（什么类型的环境
+	ct.ContextFlags = CONTEXT_ALL;// 加此标识（什么类型的环境
 	GetThreadContext(thread_handle, &ct);
 	printf("=============================== 寄存器信息 =================================\n");
 	printf("数据寄存器：       EAX:%08X  EBX:%08X  ECX:%08X  EDX:%08X\n", ct.Eax, ct.Ebx, ct.Ecx, ct.Edx);
@@ -350,7 +377,7 @@ void Debugger::ShowRegisterInfo(HANDLE thread_handle)
 void Debugger::ShowStackInfo()
 {
 	CONTEXT ct = { 0 };
-	ct.ContextFlags = CONTEXT_CONTROL;// 加此标识（什么类型的环境
+	ct.ContextFlags = CONTEXT_ALL;// 加此标识（什么类型的环境
 	GetThreadContext(m_threadHandle, &ct);
 	BYTE buff[512] = { 0 };//获取 esp 中保存的地址
 	DWORD dwRead = 0;
@@ -370,6 +397,7 @@ void Debugger::ShowCommandMenu()
 	printf("pp:      \t单步步过\n");
 	printf("lm:	  \t查看模块信息\n");
 	printf("bp-addr:\t设置软件断点\n");
+	printf("cbp-addr-buff:\t设置条件断点\n");
 	printf("hde-addr:\t设置硬件执行断点\n");
 	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
 	printf("mem-addr:\t设置内存执行/读/写断点\n");
