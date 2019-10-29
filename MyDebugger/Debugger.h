@@ -34,6 +34,8 @@ private:
 	int m_eax = 0;// 设置条件断点的条件，用用于对比
 	enum Type { NORMAL, DRXEXE, DRXRW, MEM,CONDITION}m_singleStepType;// 多个事件可触发单步异常，普通的、硬件执行/读写、软件执行/读/写
 
+	bool m_isSolvePEB = false;
+
 public:
 	void Open(LPCSTR filePath);		// 打开被调试进程
 	void Run();						// 处理调试事件
@@ -57,5 +59,7 @@ private:
 	void ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff);			// 修改汇编指令
 	void ModifyRegister(HANDLE thread_handle, char * regis, LPVOID  buff);			// 修改寄存器
 	void ModifyMemory(HANDLE process_handle, LPVOID addr, char * buff);			// 修改内存
+
+	void AntiAntiDebug(HANDLE process_handle);			// 修改内存
 };
 

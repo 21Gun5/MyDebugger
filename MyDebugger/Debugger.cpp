@@ -9,6 +9,9 @@
 #include <strsafe.h>
 #include <tchar.h>
 
+#include <winternl.h>
+#pragma comment(lib,"ntdll.lib")
+
 // 打开产生异常的进程/线程的句柄
 void Debugger::OpenHandles()
 {
@@ -32,7 +35,7 @@ void Debugger::Open(LPCSTR file_Path)
 	// 调试方式创建进程，得到被调试进程
 	BOOL result = CreateProcessA(file_Path, nullptr, NULL, NULL, FALSE,
 		DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE,
-		NULL, NULL, 
+		NULL, NULL,
 		&startupInfo, //指定进程的主窗口特性
 		&m_processInfo);//接收新进程的信息
 
@@ -63,19 +66,13 @@ void Debugger::Run()
 	{
 		// 打开对应的进程和线程的句柄
 		OpenHandles();
-
 		// 根据类型，分别处理调试事件
 		switch (m_debugEvent.dwDebugEventCode)//dwDebugEventCode 标识事件类型
 		{
-		// 异常调试事件
-		case EXCEPTION_DEBUG_EVENT:     
+			// 异常调试事件
+		case EXCEPTION_DEBUG_EVENT:
 			OnExceptionEvent();
 			break;
-
-		//// 模块导入事件
-		//case LOAD_DLL_DEBUG_EVENT:
-		//	//OnLoadDLLEvent();
-		//	break;
 
 		}
 		// 为了防止句柄泄露，应该关闭
@@ -88,8 +85,37 @@ void Debugger::Run()
 		// 假设处理失败，或者没有处理就应该返回 DBG_EXCEPTION_NOT_HANDLED   
 
 		// 回复调试子系统
-		ContinueDebugEvent(m_debugEvent.dwProcessId,m_debugEvent.dwThreadId,m_continueStatus);
+		ContinueDebugEvent(m_debugEvent.dwProcessId, m_debugEvent.dwThreadId, m_continueStatus);
 	}
+}
+// 反反调试
+void Debugger::AntiAntiDebug(HANDLE process_handle)
+{
+	PROCESS_BASIC_INFORMATION stcProcInfo;
+	NtQueryInformationProcess(process_handle, ProcessBasicInformation, &stcProcInfo, sizeof(stcProcInfo), NULL);
+	//printf("%08X\n", stcProcInfo.PebBaseAddress);
+	//获取PEB的地址
+	PPEB pPeb = stcProcInfo.PebBaseAddress;
+	//DWORD OldProtect;
+	//DWORD TempProtect;
+	DWORD dwSize = 0;
+	// 修改属性使其可写
+	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), PAGE_READWRITE, &OldProtect);
+	// 修改PEB相关字段
+	BYTE value1 = 0;
+	WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x02, &value1, 1, &dwSize);
+	//DWORD value2 = 2;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x0C, &value2, 4, &dwSize);
+	//DWORD value3 = 0;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x10, &value3, 4, &dwSize);
+	//DWORD value4 = 0;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x68, &value4, 4, &dwSize);
+	// 恢复原有属性
+	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), OldProtect, &TempProtect);
+
+	printf("PEB静态反调试解决\n");
+	m_isSolvePEB = true; // 标志其已经解决
+	return;
 }
 // 处理异常事件
 void Debugger::OnExceptionEvent()
@@ -100,7 +126,7 @@ void Debugger::OnExceptionEvent()
 	// 2 处理不同的异常类型
 	switch (exceptionCode)
 	{
-	// 1 单步异常：DRx硬件断点、TF单步断点都在这
+		// 1 单步异常：DRx硬件断点、TF单步断点都在这
 	case EXCEPTION_SINGLE_STEP:
 	{
 		switch (m_singleStepType)
@@ -141,15 +167,15 @@ void Debugger::OnExceptionEvent()
 	{
 		if (m_isConditonSet)
 		{
-			bool isFind = BreakPoint::WhenConditionBreakPoint(m_processHandle,m_threadHandle, m_eax, LPVOID(exceptionAddr));
+			bool isFind = BreakPoint::WhenConditionBreakPoint(m_processHandle, m_threadHandle, m_eax, LPVOID(exceptionAddr));
 
 			// 若满足条件，则打印，修复，继续执行
 			if (isFind)
 			{
 				printf("\n================================ 异常信息 ==================================\n");
 				printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
-				printf("详情: eax=%d 的条件断点发生\n",m_eax);
-				
+				printf("详情: eax=%d 的条件断点发生\n", m_eax);
+
 				m_isConditonSet = false;
 				break;
 			}
@@ -168,6 +194,11 @@ void Debugger::OnExceptionEvent()
 		{
 			printf("详情: 第一个异常事件，即系统断点发生\n");
 			m_isSysBPHappened = true;
+
+		// 注意，在系统断点发生之后在修改PEB的值
+		// 被调试进程在跑之前，系统先检测PEB的BeingDebug值，根据这个来下系统断点
+		// 若之前就修改，系统检测不到，就停不下来
+		AntiAntiDebug(m_processHandle);
 		}
 		else
 		{
@@ -181,9 +212,9 @@ void Debugger::OnExceptionEvent()
 	{
 		DWORD type = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[0];//触发类型0/1/8
 		DWORD memAccessAddr = m_debugEvent.u.Exception.ExceptionRecord.ExceptionInformation[1];//触发地址
-		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle,LPVOID(memAccessAddr));
+		bool isFind = BreakPoint::WhenMemExeBreakPoint(m_processHandle, m_threadHandle, LPVOID(memAccessAddr));
 		// 如果找到地址，则打印信息，break
-		if(isFind)
+		if (isFind)
 		{
 			printf("\n================================ 异常信息 ==================================\n");
 			printf("类型: %08X\n地址: %p\n", exceptionCode, memAccessAddr);
@@ -237,12 +268,7 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "test"))
 		{
-			//// 获取要设置的地址
-			//LPVOID addr = 0;
-			//scanf_s("%x", &addr);
-			//BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
-			//m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
-			//m_singleStepType = MEMEXE;
+			AntiAntiDebug(m_processHandle);
 		}
 		else if (!strcmp(input, "shmd"))
 		{
@@ -260,7 +286,7 @@ void Debugger::GetUserCommand()
 			// 查看内存信息
 			int addr = 0, size = 0;
 			scanf_s("%x %d", &addr, &size);
-			ShowMemStaInfo(m_processHandle,addr,size);
+			ShowMemStaInfo(m_processHandle, addr, size);
 		}
 		else if (!strcmp(input, "shas"))
 		{
@@ -291,7 +317,7 @@ void Debugger::GetUserCommand()
 			LPVOID addr = 0;
 			char buff[100] = { 0 };
 			scanf_s("%x", &addr);
-			scanf_s("%s",buff,100);
+			scanf_s("%s", buff, 100);
 			ModifyMemory(m_processHandle, addr, buff);
 		}
 		else if (!strcmp(input, "mfrg"))
@@ -299,9 +325,9 @@ void Debugger::GetUserCommand()
 			// 修改寄存器
 			char regis[10] = { 0 };
 			LPVOID buff = 0;
-			scanf_s("%s", regis,10);
+			scanf_s("%s", regis, 10);
 			scanf_s("%x", &buff);
-			ModifyRegister(m_threadHandle,regis,buff);
+			ModifyRegister(m_threadHandle, regis, buff);
 		}
 		else if (!strcmp(input, "sfbp"))
 		{
@@ -317,7 +343,7 @@ void Debugger::GetUserCommand()
 			int eax = 0;
 			scanf_s("%x", &addr);
 			scanf_s("%d", &eax);
-			BreakPoint::SetConditionBreakPoint(m_processHandle,m_threadHandle, addr, eax);
+			BreakPoint::SetConditionBreakPoint(m_processHandle, m_threadHandle, addr, eax);
 			m_eax = eax;// 记录下，后续要用于对比
 			m_isConditonSet = true;
 			m_ConditionBreakPointAddr = addr;
@@ -351,17 +377,17 @@ void Debugger::GetUserCommand()
 			int len = 0;
 			scanf_s("%x", &addr);
 			scanf_s("%d", &len);
-			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len-1);// 读写断点时，rw=1,len 自定
+			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len - 1);// 读写断点时，rw=1,len 自定
 			m_singleStepType = DRXRW;
 		}
 		else if (!strcmp(input, "mmbp"))
 		{
-		// 获取要设置的地址
-		LPVOID addr = 0;
-		scanf_s("%x", &addr);
-		BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
-		m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
-		m_singleStepType = MEM;
+			// 获取要设置的地址
+			LPVOID addr = 0;
+			scanf_s("%x", &addr);
+			BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
+			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
+			m_singleStepType = MEM;
 		}
 		else if (!strcmp(input, "clpg"))
 		{
@@ -370,7 +396,7 @@ void Debugger::GetUserCommand()
 		else
 		{
 			printf("指令错误\n");
-		}		
+		}
 	}
 }
 
@@ -407,7 +433,7 @@ void Debugger::ShowMemStaInfo(HANDLE process_handle, DWORD addr, int size)
 	printf("\n================================= 内存/栈 ===================================\n");
 	for (int i = 0; i < size; i++)
 	{
-		printf("%08X: %08X\tESP+%2d: %08X\n", addr,((DWORD *)buff)[i], i * 4, ((DWORD *)buff2)[i]);
+		printf("%08X: %08X\tESP+%2d: %08X\n", addr, ((DWORD *)buff)[i], i * 4, ((DWORD *)buff2)[i]);
 		addr += 4;
 	}
 }
@@ -440,7 +466,7 @@ void Debugger::ShowModuleInfo()
 	} while (Module32Next(hSnap, &mInfo));
 
 	printf("基址\t\t大小\t\t路径\n");
-	for (auto&i : moduleList) 
+	for (auto&i : moduleList)
 	{
 		printf("%08X\t%08X\t%s\n", i.modBaseAddr, i.modBaseSize, i.szExePath);
 	}
@@ -449,10 +475,10 @@ void Debugger::ShowModuleInfo()
 // 修改汇编代码
 void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 {
-	Keystone::Asm(process_handle,addr, buff);
+	Keystone::Asm(process_handle, addr, buff);
 }
 // 修改寄存器
-void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)
+void Debugger::ModifyRegister(HANDLE thread_handle, char * regis, LPVOID buff)
 {
 	// 获取寄存器环境
 	CONTEXT context = { CONTEXT_ALL };
@@ -494,6 +520,6 @@ void Debugger::ModifyMemory(HANDLE process_handle, LPVOID addr, char * buff)
 {
 	//ShowMemStaInfo(process_handle, (DWORD)addr, 10);
 	WriteProcessMemory(process_handle, addr, buff, strlen(buff), NULL);
-	ShowMemStaInfo(process_handle,(DWORD)addr,10);
+	ShowMemStaInfo(process_handle, (DWORD)addr, 10);
 }
 
