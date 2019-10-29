@@ -3,6 +3,7 @@
 #include "Capstone.h"
 #include "Keystone.h"
 #include "BreakPoint.h"
+#include "Plugin.h"
 #include <stdio.h>
 #include <psapi.h>
 #include <strsafe.h>
@@ -231,7 +232,6 @@ void Debugger::OnExceptionEvent()
 // 获取用户的输入
 void Debugger::GetUserCommand()
 {
-
 	char input[0x100] = { 0 };
 	while (true)
 	{
@@ -344,14 +344,17 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "mem"))
 		{
-			// 获取要设置的地址
-			LPVOID addr = 0;
-			scanf_s("%x", &addr);
-			BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
-			m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
-			m_singleStepType = MEM;
+		// 获取要设置的地址
+		LPVOID addr = 0;
+		scanf_s("%x", &addr);
+		BreakPoint::SetMemExeBreakPoint(m_processHandle, m_threadHandle, addr);
+		m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
+		m_singleStepType = MEM;
 		}
-
+		else if (!strcmp(input, "plg"))
+		{
+			Plugin::CallPlgFun();		// 正在运行时调用
+		}
 		else
 		{
 			printf("指令输入错误\n");
@@ -492,3 +495,4 @@ void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)
 void Debugger::ModifyStack()
 {
 }
+

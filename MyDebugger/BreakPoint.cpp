@@ -3,7 +3,7 @@
 
 // 事先声明
 vector<BREAKPOINTINFO> BreakPoint::breakPointList;
- MEMBREAKPOINTINFO BreakPoint::m_memBreakPoint;
+MEMBREAKPOINTINFO BreakPoint::m_memBreakPoint;
 
 // 设置TF单步步入断点，系统自动修复
 void BreakPoint::SetTFStepIntoBreakPoint(HANDLE thread_handle)
