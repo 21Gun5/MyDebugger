@@ -91,7 +91,6 @@ void Debugger::Run()
 		ContinueDebugEvent(m_debugEvent.dwProcessId,m_debugEvent.dwThreadId,m_continueStatus);
 	}
 }
-
 // 处理异常事件
 void Debugger::OnExceptionEvent()
 {
@@ -214,21 +213,11 @@ void Debugger::OnExceptionEvent()
 	}
 	// 3 查看信息
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
-	ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
+	//ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
 	//ShowStackInfo();	// 查看栈空间
 	// 4 获取用户输入
 	GetUserCommand();
 }
-
-//// 处理模块导入事件
-//void Debugger::OnLoadDLLEvent()
-//{
-//	// 获取dll文件的句柄
-//	//HANDLE hFile = m_debugEvent.u.LoadDll.hFile;
-//	// 显示导入的模块（通过句柄获取路径
-//	GetNameFromHandle(m_debugEvent.u.LoadDll);
-//}
-
 // 获取用户的输入
 void Debugger::GetUserCommand()
 {
@@ -241,7 +230,7 @@ void Debugger::GetUserCommand()
 		// 2 获取指令，指令应该是事先考虑好的
 		scanf_s("%s", input, 0x100);
 		// 3 分别执行不同的指令
-		if (!strcmp(input, "g"))
+		if (!strcmp(input, "go"))
 		{
 			// 继续执行，直到运行结束或遇到下一个异常
 			break;
@@ -255,19 +244,32 @@ void Debugger::GetUserCommand()
 			//m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
 			//m_singleStepType = MEMEXE;
 		}
-		else if (!strcmp(input, "lm"))
+		else if (!strcmp(input, "shmd"))
 		{
 			// 显示模块信息
 			ShowModuleInfo();
 		}
-		else if (!strcmp(input, "u"))
+		else if (!strcmp(input, "shrg"))
+		{
+			// 显示寄存器
+			ShowRegisterInfo(m_threadHandle);
+		}
+		else if (!strcmp(input, "shmm"))
+		{
+			// show memory and stack
+			// 查看内存信息
+			int addr = 0, size = 0;
+			scanf_s("%x %d", &addr, &size);
+			ShowMemStaInfo(m_processHandle,addr,size);
+		}
+		else if (!strcmp(input, "shas"))
 		{
 			// 查看汇编指令
 			int addr = 0, lines = 0;
 			scanf_s("%x %d", &addr, &lines);
 			Capstone::DisAsm(m_processHandle, (LPVOID)addr, lines);
 		}
-		else if (!strcmp(input, "mu"))
+		else if (!strcmp(input, "mfas"))
 		{
 			/* 示例：
 			mu 7786e9e3 mov ecx,1; B901000000
@@ -282,7 +284,17 @@ void Debugger::GetUserCommand()
 			//scanf_s("%s", buff,0x10);
 			ModifyAssemble(m_processHandle, addr, buff);
 		}
-		else if (!strcmp(input, "mr"))
+		else if (!strcmp(input, "mfmm"))
+		{
+			// modify memory
+			// 修改内存
+			LPVOID addr = 0;
+			char buff[100] = { 0 };
+			scanf_s("%x", &addr);
+			scanf_s("%s",buff,100);
+			ModifyMemory(m_processHandle, addr, buff);
+		}
+		else if (!strcmp(input, "mfrg"))
 		{
 			// 修改寄存器
 			char regis[10] = { 0 };
@@ -291,14 +303,14 @@ void Debugger::GetUserCommand()
 			scanf_s("%x", &buff);
 			ModifyRegister(m_threadHandle,regis,buff);
 		}
-		else if (!strcmp(input, "bp"))
+		else if (!strcmp(input, "sfbp"))
 		{
 			// 设置int3软件断点
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
 			BreakPoint::SetCCBreakPoint(m_processHandle, addr);
 		}
-		else if (!strcmp(input, "cbp"))
+		else if (!strcmp(input, "cdbp"))
 		{
 			// 获取要设置的地址、条件
 			LPVOID addr = 0;
@@ -311,20 +323,20 @@ void Debugger::GetUserCommand()
 			m_ConditionBreakPointAddr = addr;
 			m_singleStepType = CONDITION;
 		}
-		else if (!strcmp(input, "p"))
+		else if (!strcmp(input, "stin"))
 		{
 			// 设置TF单步断点
 			BreakPoint::SetTFStepIntoBreakPoint(m_threadHandle);
 			m_singleStepType = NORMAL;
 			break;
 		}
-		else if (!strcmp(input, "pp"))
+		else if (!strcmp(input, "ston"))
 		{
 			// 设置TF单步步过断点
 			BreakPoint::SetStepByBreakPoint(m_processHandle, m_threadHandle);
 			break;// 要break，结束本次，以解除上面函数中的int3断点
 		}
-		else if (!strcmp(input, "hde"))
+		else if (!strcmp(input, "hdex"))
 		{
 			// 获取要设置的地址
 			LPVOID addr = 0;
@@ -332,7 +344,7 @@ void Debugger::GetUserCommand()
 			BreakPoint::SetDrxExeBreakPoint(m_threadHandle, (DWORD)addr);// 执行断点时，rw=0，len=0
 			m_singleStepType = DRXEXE;
 		}
-		else if (!strcmp(input, "hdr"))
+		else if (!strcmp(input, "hdrw"))
 		{
 			// 获取要设置的地址、类型
 			LPVOID addr = 0;
@@ -342,7 +354,7 @@ void Debugger::GetUserCommand()
 			BreakPoint::SetDrxRwBreakPoint(m_threadHandle, (DWORD)addr, len-1);// 读写断点时，rw=1,len 自定
 			m_singleStepType = DRXRW;
 		}
-		else if (!strcmp(input, "mem"))
+		else if (!strcmp(input, "mmbp"))
 		{
 		// 获取要设置的地址
 		LPVOID addr = 0;
@@ -351,13 +363,13 @@ void Debugger::GetUserCommand()
 		m_memBreakPointAddr = addr;// 记录下此地址，单步异常时再次设置
 		m_singleStepType = MEM;
 		}
-		else if (!strcmp(input, "plg"))
+		else if (!strcmp(input, "clpg"))
 		{
 			Plugin::CallPlgFun();		// 正在运行时调用
 		}
 		else
 		{
-			printf("指令输入错误\n");
+			printf("指令错误\n");
 		}		
 	}
 }
@@ -376,39 +388,41 @@ void Debugger::ShowRegisterInfo(HANDLE thread_handle)
 	printf("指令指针寄存器：   EIP:%08X\n", ct.Eip);
 	printf("标志寄存器：       EFLAGS:%08X\n", ct.EFlags);
 }
-// 显示栈空间信息
-void Debugger::ShowStackInfo()
+// 显示内存/栈信息
+void Debugger::ShowMemStaInfo(HANDLE process_handle, DWORD addr, int size)
 {
+	// 获取栈信息
 	CONTEXT ct = { 0 };
 	ct.ContextFlags = CONTEXT_ALL;// 加此标识（什么类型的环境
 	GetThreadContext(m_threadHandle, &ct);
+	BYTE buff2[512] = { 0 };//获取 esp 中保存的地址
+	DWORD dwRead2 = 0;
+	ReadProcessMemory(m_processHandle, (BYTE*)ct.Esp, buff2, 512, &dwRead2);
+
+	// 获取内存信息
 	BYTE buff[512] = { 0 };//获取 esp 中保存的地址
 	DWORD dwRead = 0;
-	ReadProcessMemory(m_processHandle, (BYTE*)ct.Esp, buff, 512, &dwRead);
-	printf("\n================================= 栈空间 ===================================\n");
-	for (int i = 0; i < 10; i++)
+	ReadProcessMemory(m_processHandle, LPVOID(addr), buff, 512, &dwRead);
+	// 打印
+	printf("\n================================= 内存/栈 ===================================\n");
+	for (int i = 0; i < size; i++)
 	{
-		printf("ESP + %2d\t%08X\n", i * 4, ((DWORD *)buff)[i]);
+		printf("%08X: %08X\tESP+%2d: %08X\n", addr,((DWORD *)buff)[i], i * 4, ((DWORD *)buff2)[i]);
+		addr += 4;
 	}
 }
 // 显示支持的命令
 void Debugger::ShowCommandMenu()
 {
 	printf("\n================================ 键入指令 ==================================\n");
-	printf("g:      \t继续执行\n");
-	printf("p:      \t单步步入\n");
-	printf("pp:      \t单步步过\n");
-	printf("lm:	  \t查看模块信息\n");
-	printf("bp-addr:\t设置软件断点\n");
-	printf("cbp-addr-buff:\t设置条件断点\n");
-	printf("hde-addr:\t设置硬件执行断点\n");
-	printf("hdr-addr-1/2/4:\t设置硬件读写断点\n");
-	printf("mem-addr:\t设置内存执行/读/写断点\n");
-	printf("u-addr-lines:\t查看汇编指令\n");
-	printf("mu-addr-buff:\t修改汇编指令\n");
-	printf("mr-regi-buff:\t修改寄存器环境\n");
+	printf("go:   继续执行   shmd: 查看模块             sfbp-addr: 设置软件断点\n");
+	printf("stin: 单步步入   shrg: 查看寄存器           mmbp-addr: 设置内存断点\n");
+	printf("ston: 单步步过   shmm: 查看内存/栈          hdex-addr: 设置硬件执行断点\n");
+	printf("clpg: 调用插件   shas-addr-line: 查看汇编   hdrw-addr-len: 设置硬件读写断点\n");
+	printf("                 mfmm-addr-buff: 修改内存   cdbp-addr-buff: 设置条件断点\n");
+	printf("                 mfas-addr-buff: 修改汇编指令\n");
+	printf("                 mfrg-regi-buff: 修改寄存器环境\n");
 }
-
 // 显示模块信息
 void Debugger::ShowModuleInfo()
 {
@@ -432,22 +446,6 @@ void Debugger::ShowModuleInfo()
 	}
 }
 
-// 获取进程所有模块
-//void Debugger::GetProcessAllModule(DWORD dwPid, std::vector<MODULEENTRY32>* moduleList)
-//{
-//	// 获取快照句柄（遍历模块时需指定pid
-//	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwPid);
-//	// 存储模块信息
-//	MODULEENTRY32 mInfo = { sizeof(MODULEENTRY32) };
-//	// 遍历模块
-//	Module32First(hSnap, &mInfo);
-//	do
-//	{
-//		moduleList->push_back(mInfo);
-//	} while (Module32Next(hSnap, &mInfo));
-//}
-
-
 // 修改汇编代码
 void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 {
@@ -457,7 +455,7 @@ void Debugger::ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff)
 void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)
 {
 	// 获取寄存器环境
-	CONTEXT context = { CONTEXT_CONTROL };
+	CONTEXT context = { CONTEXT_ALL };
 	GetThreadContext(thread_handle, &context);
 	// 判断修改的哪个寄存器
 	if (!strcmp(regis, "eip"))
@@ -491,8 +489,11 @@ void Debugger::ModifyRegister(HANDLE thread_handle,char * regis, LPVOID buff)
 	// 再次显示来证明修改成功
 	ShowRegisterInfo(thread_handle);
 }
-// 修改栈内存
-void Debugger::ModifyStack()
+// 修改内存
+void Debugger::ModifyMemory(HANDLE process_handle, LPVOID addr, char * buff)
 {
+	//ShowMemStaInfo(process_handle, (DWORD)addr, 10);
+	WriteProcessMemory(process_handle, addr, buff, strlen(buff), NULL);
+	ShowMemStaInfo(process_handle,(DWORD)addr,10);
 }
 

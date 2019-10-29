@@ -47,17 +47,15 @@ private:
 	void GetUserCommand();			// 获取用户输入的命令
 
 	void ShowRegisterInfo(HANDLE thread_handle);		// 显示寄存器信息
-	void ShowStackInfo();			// 显示栈空间信息
+	//void ShowStackInfo();			// 显示栈空间信息
 	void ShowCommandMenu();			// 显示支持的命令
+	void ShowMemStaInfo(HANDLE thread_handle, DWORD addr, int size);
 	//void GetProcessAllModule(DWORD dwPid, std::vector<MODULEENTRY32>* moduleList);// 获取进程所有模块
 	//bool GetNameFromHandle(LOAD_DLL_DEBUG_INFO dllInfo);	
 	void ShowModuleInfo();// 显示模块信息
 
 	void ModifyAssemble(HANDLE process_handle, LPVOID addr, char * buff);			// 修改汇编指令
 	void ModifyRegister(HANDLE thread_handle, char * regis, LPVOID  buff);			// 修改寄存器
-	void ModifyStack();				// 修改栈
-
-
-
+	void ModifyMemory(HANDLE process_handle, LPVOID addr, char * buff);			// 修改内存
 };
 

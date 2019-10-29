@@ -1,14 +1,12 @@
 ﻿  Debugger.cpp
 c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(190): warning C4477: “printf”: 格式字符串“%p”需要类型“void *”的参数，但可变参数 2 拥有了类型“DWORD”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(280): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(291): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(298): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(306): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(331): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(340): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(349): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
-c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(431): warning C4477: “printf”: 格式字符串“%08X”需要类型“unsigned int”的参数，但可变参数 1 拥有了类型“BYTE *”
-  Plugin.cpp
-  main.cpp
-  正在生成代码...
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(284): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(295): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(305): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(312): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(320): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(345): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(354): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(363): warning C4477: “scanf_s”: 格式字符串“%x”需要类型“unsigned int *”的参数，但可变参数 1 拥有了类型“LPVOID *”
+c:\users\ry1yn\source\repos\15pb\mydebugger\debugger.cpp(479): warning C4477: “printf”: 格式字符串“%08X”需要类型“unsigned int”的参数，但可变参数 1 拥有了类型“BYTE *”
   MyDebugger.vcxproj -> C:\Users\ry1yn\source\repos\15PB\Debug\MyDebugger.exe
