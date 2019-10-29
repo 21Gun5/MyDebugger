@@ -30,9 +30,10 @@ private:
 	//vector<MYMODULEINFO> m_moduleInfoList;// 导入的模块列表
 
 	LPVOID m_memBreakPointAddr = 0;// 设置内存断点的位置，因为要多次设置，故保存下来
-	LPVOID m_ConditionBreakPointAddr = 0;// 设置内存断点的位置，因为要多次设置，故保存下来
+	LPVOID m_ConditionBreakPointAddr = 0;// 设置条件断点的位置，因为要多次设置，故保存下来
+	LPVOID m_eternalPointAddr = 0;//永久断点的地址
 	int m_eax = 0;// 设置条件断点的条件，用用于对比
-	enum Type { NORMAL, DRXEXE, DRXRW, MEM,CONDITION}m_singleStepType;// 多个事件可触发单步异常，普通的、硬件执行/读写、软件执行/读/写
+	enum Type { NORMAL, DRXEXE, DRXRW, MEM,CONDITION,CC}m_singleStepType;// 多个事件可触发单步异常，普通的、硬件执行/读写、软件执行/读/写
 
 	bool m_isSolvePEB = false;
 

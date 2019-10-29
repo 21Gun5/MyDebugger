@@ -88,35 +88,6 @@ void Debugger::Run()
 		ContinueDebugEvent(m_debugEvent.dwProcessId, m_debugEvent.dwThreadId, m_continueStatus);
 	}
 }
-// 反反调试
-void Debugger::AntiAntiDebug(HANDLE process_handle)
-{
-	PROCESS_BASIC_INFORMATION stcProcInfo;
-	NtQueryInformationProcess(process_handle, ProcessBasicInformation, &stcProcInfo, sizeof(stcProcInfo), NULL);
-	//printf("%08X\n", stcProcInfo.PebBaseAddress);
-	//获取PEB的地址
-	PPEB pPeb = stcProcInfo.PebBaseAddress;
-	//DWORD OldProtect;
-	//DWORD TempProtect;
-	DWORD dwSize = 0;
-	// 修改属性使其可写
-	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), PAGE_READWRITE, &OldProtect);
-	// 修改PEB相关字段
-	BYTE value1 = 0;
-	WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x02, &value1, 1, &dwSize);
-	//DWORD value2 = 2;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x0C, &value2, 4, &dwSize);
-	//DWORD value3 = 0;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x10, &value3, 4, &dwSize);
-	//DWORD value4 = 0;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x68, &value4, 4, &dwSize);
-	// 恢复原有属性
-	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), OldProtect, &TempProtect);
-
-	printf("PEB静态反调试解决\n");
-	m_isSolvePEB = true; // 标志其已经解决
-	return;
-}
 // 处理异常事件
 void Debugger::OnExceptionEvent()
 {
@@ -141,6 +112,7 @@ void Debugger::OnExceptionEvent()
 			printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 			printf("详情: 硬件执行断点发生\n");
 			BreakPoint::FixDrxBreakPoint(m_threadHandle);
+			//return;
 			break;
 		case Debugger::DRXRW:
 			printf("\n================================ 异常信息 ==================================\n");
@@ -157,6 +129,10 @@ void Debugger::OnExceptionEvent()
 			// 再设置条件断点，即INT3软件断点
 			BreakPoint::SetConditionBreakPoint(m_processHandle, m_threadHandle, m_ConditionBreakPointAddr, m_eax);
 			return;
+		case Debugger::CC:
+			// 再设置条件断点，即INT3软件断点
+			BreakPoint::SetCCBreakPoint(m_processHandle, m_eternalPointAddr);
+			return;
 		default:
 			break;
 		}
@@ -165,47 +141,49 @@ void Debugger::OnExceptionEvent()
 	// 2 断点异常: int3软件断点
 	case EXCEPTION_BREAKPOINT:
 	{
+		// 1 条件断点
 		if (m_isConditonSet)
 		{
 			bool isFind = BreakPoint::WhenConditionBreakPoint(m_processHandle, m_threadHandle, m_eax, LPVOID(exceptionAddr));
-
 			// 若满足条件，则打印，修复，继续执行
 			if (isFind)
 			{
 				printf("\n================================ 异常信息 ==================================\n");
 				printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
 				printf("详情: eax=%d 的条件断点发生\n", m_eax);
-
 				m_isConditonSet = false;
 				break;
 			}
 			// 若不满足，则退出，继续
 			else
 			{
-				//BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
-				//BreakPoint::SetTFStepIntoBreakPoint(m_processHandle, exceptionAddr);
 				return;
 			}
 		}
 		printf("\n================================ 异常信息 ==================================\n");
 		printf("类型: %08X\n地址: %p\n", exceptionCode, exceptionAddr);
-		// 系统断点发生（其为0则没发生，发生后则作标记
+		// 2 系统断点发生（其为0则没发生，发生后则作标记
 		if (!m_isSysBPHappened)
 		{
 			printf("详情: 第一个异常事件，即系统断点发生\n");
 			m_isSysBPHappened = true;
-
-		// 注意，在系统断点发生之后在修改PEB的值
-		// 被调试进程在跑之前，系统先检测PEB的BeingDebug值，根据这个来下系统断点
-		// 若之前就修改，系统检测不到，就停不下来
-		AntiAntiDebug(m_processHandle);
+			// 注意，在系统断点发生之后在修改PEB的值
+			// 被调试进程在跑之前，系统先检测PEB的BeingDebug值，根据这个来下系统断点
+			// 若之前就修改，系统检测不到，就停不下来
+			AntiAntiDebug(m_processHandle);
+			BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
+			break;
 		}
+		// 3 普通软件断点
 		else
 		{
 			printf("详情: int3软件断点发生\n");
+			BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
+			// 再下一个TF单步断点
+			BreakPoint::SetTFStepIntoBreakPoint(m_threadHandle);
+			m_singleStepType = CC;
+			break;
 		}
-		BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
-		break;
 	}
 	// 3 访问异常：内存访问断点
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -244,8 +222,6 @@ void Debugger::OnExceptionEvent()
 	}
 	// 3 查看信息
 	Capstone::DisAsm(m_processHandle, exceptionAddr, 10);// 查看反汇编代码（eip处，而非异常发生处
-	//ShowRegisterInfo(m_threadHandle);	// 查看寄存器信息
-	//ShowStackInfo();	// 查看栈空间
 	// 4 获取用户输入
 	GetUserCommand();
 }
@@ -335,6 +311,7 @@ void Debugger::GetUserCommand()
 			LPVOID addr = 0;
 			scanf_s("%x", &addr);
 			BreakPoint::SetCCBreakPoint(m_processHandle, addr);
+			m_eternalPointAddr = addr;
 		}
 		else if (!strcmp(input, "cdbp"))
 		{
@@ -398,6 +375,35 @@ void Debugger::GetUserCommand()
 			printf("指令错误\n");
 		}
 	}
+}
+// 反反调试
+void Debugger::AntiAntiDebug(HANDLE process_handle)
+{
+	PROCESS_BASIC_INFORMATION stcProcInfo;
+	NtQueryInformationProcess(process_handle, ProcessBasicInformation, &stcProcInfo, sizeof(stcProcInfo), NULL);
+	//printf("%08X\n", stcProcInfo.PebBaseAddress);
+	//获取PEB的地址
+	PPEB pPeb = stcProcInfo.PebBaseAddress;
+	//DWORD OldProtect;
+	//DWORD TempProtect;
+	DWORD dwSize = 0;
+	// 修改属性使其可写
+	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), PAGE_READWRITE, &OldProtect);
+	// 修改PEB相关字段
+	BYTE value1 = 0;
+	WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x02, &value1, 1, &dwSize);
+	//DWORD value2 = 2;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x0C, &value2, 4, &dwSize);
+	//DWORD value3 = 0;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x10, &value3, 4, &dwSize);
+	//DWORD value4 = 0;
+	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x68, &value4, 4, &dwSize);
+	// 恢复原有属性
+	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), OldProtect, &TempProtect);
+
+	printf("PEB静态反调试解决\n");
+	m_isSolvePEB = true; // 标志其已经解决
+	return;
 }
 
 // 显示寄存器信息
