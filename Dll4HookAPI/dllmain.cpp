@@ -20,29 +20,50 @@ int NTAPI MyNtQueryInformationProcess(
 	_Out_opt_ PULONG           ReturnLength
 )
 {
-	UnInlineHook();
+	////MessageBox(0, L"444", 0, 0);
+	//UnInlineHook();
 
-	// 1 调用原始函数
-	int status = NtQueryInformationProcess(
-		ProcessHandle,
-		ProcessInformationClass,
-		ProcessInformation,
-		ProcessInformationLength,
-		ReturnLength);
-	// 2 若返回为0，且查询类型为调试端口（返回为0推测为运行成功
-	if (status == 0x00000000 && ProcessInformationClass == ProcessDebugPort)
+	//// 1 调用原始函数
+	//int status = NtQueryInformationProcess(
+	//	ProcessHandle,
+	//	ProcessInformationClass,
+	//	ProcessInformation,
+	//	ProcessInformationLength,
+	//	ReturnLength);
+	//// 2 若返回为0，且查询类型为调试端口（返回为0推测为运行成功
+	//if (status == 0x00000000 && ProcessInformationClass == ProcessDebugPort)
+	//{
+	//	// 3 将获取的信息置为0，即所查询的调试端口
+	//	*((PDWORD_PTR)ProcessInformation) = 0;
+	//}
+	//MessageBoxW(0, L"你被hook了", 0, 0);
+	//OnInlineHook();
+	//return status;
+
+
+	__kernel_entry NTSTATUS Ret;
+	//调用函数
+	if (ProcessInformationClass != ProcessDebugPort && ProcessInformationClass != 0x1E)
 	{
-		// 3 将获取的信息置为0，即所查询的调试端口
-		*((PDWORD_PTR)ProcessInformation) = 0;
+		// 卸载钩子
+		UnInlineHook();
+		Ret = NtQueryInformationProcess(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength, ReturnLength);
+		//设置钩子
+		OnInlineHook();
 	}
-	MessageBoxW(0, L"你被hook了", 0, 0);
-	OnInlineHook();
-	return status;
+	else
+	{
+		Ret = 0;
+	}
+	return Ret;
+
+
 }
 
 // 开启Hook
 void OnInlineHook()
 {
+	//MessageBox(0, L"222", 0, 0);
 	// 1 获取函数地址
 	HMODULE hModule = LoadLibrary(TEXT("ntdll.dll"));
 	LPVOID lpMsgAddr = GetProcAddress(hModule, "NtQueryInformationProcess");
@@ -62,6 +83,7 @@ void OnInlineHook()
 // 关闭InlineHook
 void UnInlineHook()
 {
+	//MessageBox(0, L"333", 0, 0);
 	// 还原MessageBoxW前5个字节
 	// 1 获取函数地址
 	HMODULE hModule = LoadLibrary(TEXT("ntdll.dll"));
@@ -81,6 +103,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpvReserved)
 	switch (fdwReason)
 	{
 	case DLL_PROCESS_ATTACH:
+		//MessageBox(0, L"123", 0, 0);
 		OnInlineHook();
 		break;
 	case DLL_PROCESS_DETACH:

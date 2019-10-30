@@ -175,7 +175,7 @@ void Debugger::OnExceptionEvent()
 			// 若之前就修改，系统检测不到，就停不下来
 			AntiAntiDebug(m_processHandle);
 
-			//AntiAntiDebug2(m_processHandle);//hookAPI 反反调试，未成功
+			AntiAntiDebug2(m_processHandle);//hookAPI 反反调试，未成功
 			BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
 			break;
 		}
@@ -411,7 +411,9 @@ void Debugger::AntiAntiDebug(HANDLE process_handle)
 	return;
 }
 
-#define DLLPATH L"res/Dll4HookAPI.dll"
+
+//#define DLLPATH L"C:\\Users\\ry1yn\\source\\repos\\15PB\\Debug\\Dll4HookAPI.dll"
+#define DLLPATH L"..\\HookAPI\\Dll4HookAPI.dll"
 void Debugger::AntiAntiDebug2(HANDLE process_handle)
 {
 // 2.在目标进程中申请空间
@@ -436,18 +438,18 @@ void Debugger::AntiAntiDebug2(HANDLE process_handle)
 		process_handle,					// 目标进程句柄
 		NULL,						// 安全属性
 		NULL,						// 栈大小
-		(PTHREAD_START_ROUTINE)LoadLibrary,	// 回调函数
+		(PTHREAD_START_ROUTINE)LoadLibraryW,	// 回调函数
 		lpPathAddr,					// 回调函数参数
 		NULL,						// 标志
 		NULL						// 线程ID
 	);
 
 	// 5.等待线程结束
-	WaitForSingleObject(hThread, 10);
+	//WaitForSingleObject(hThread, -1);
 
 	// 6.清理环境
-	VirtualFreeEx(process_handle, lpPathAddr, 0, MEM_RELEASE);
-	CloseHandle(hThread);
+	//VirtualFreeEx(process_handle, lpPathAddr, 0, MEM_RELEASE);
+	//CloseHandle(hThread);
 	//CloseHandle(process_handle);
 	return;
 }
