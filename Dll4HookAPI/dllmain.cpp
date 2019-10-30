@@ -1,6 +1,5 @@
 ﻿// dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "stdafx.h"
-
 #include <Windows.h>
 #include <winternl.h>
 #pragma comment(lib,"ntdll.lib")
@@ -8,8 +7,8 @@
 void OnInlineHook();
 void UnInlineHook();
 
-BYTE g_oldcode[5] = {};// 保存hook地址前5个字节
-BYTE g_newcode[5] = { 0xE9 };// 保存hook的5个指令  jmp 0xxxxxxxx
+BYTE g_oldcode[5] = {};			// 保存hook地址前5个字节
+BYTE g_newcode[5] = { 0xE9 };	// 保存hook的5个指令  jmp xxx
 
 // 自己函数
 int NTAPI MyNtQueryInformationProcess(
@@ -20,27 +19,6 @@ int NTAPI MyNtQueryInformationProcess(
 	_Out_opt_ PULONG           ReturnLength
 )
 {
-	////MessageBox(0, L"444", 0, 0);
-	//UnInlineHook();
-
-	//// 1 调用原始函数
-	//int status = NtQueryInformationProcess(
-	//	ProcessHandle,
-	//	ProcessInformationClass,
-	//	ProcessInformation,
-	//	ProcessInformationLength,
-	//	ReturnLength);
-	//// 2 若返回为0，且查询类型为调试端口（返回为0推测为运行成功
-	//if (status == 0x00000000 && ProcessInformationClass == ProcessDebugPort)
-	//{
-	//	// 3 将获取的信息置为0，即所查询的调试端口
-	//	*((PDWORD_PTR)ProcessInformation) = 0;
-	//}
-	//MessageBoxW(0, L"你被hook了", 0, 0);
-	//OnInlineHook();
-	//return status;
-
-
 	__kernel_entry NTSTATUS Ret;
 	//调用函数
 	if (ProcessInformationClass != ProcessDebugPort && ProcessInformationClass != 0x1E)
@@ -56,8 +34,6 @@ int NTAPI MyNtQueryInformationProcess(
 		Ret = 0;
 	}
 	return Ret;
-
-
 }
 
 // 开启Hook
@@ -94,8 +70,6 @@ void UnInlineHook()
 	memcpy(lpMsgAddr, g_oldcode, 5);// 修改MessageBoxW指令前5个字节
 	VirtualProtect(lpMsgAddr, 5, dwOldProtect, &dwOldProtect);// 恢复页属性
 }
-
-
 
 // 当进程注入时，开启hook
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpvReserved)

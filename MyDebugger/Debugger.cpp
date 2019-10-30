@@ -8,7 +8,6 @@
 #include <psapi.h>
 #include <strsafe.h>
 #include <tchar.h>
-
 #include <winternl.h>
 #pragma comment(lib,"ntdll.lib")
 
@@ -38,16 +37,6 @@ void Debugger::Open(LPCSTR file_Path)
 		NULL, NULL,
 		&startupInfo, //指定进程的主窗口特性
 		&m_processInfo);//接收新进程的信息
-
-	// DEBUG_PROCESS 表示以调试的方式打开目标进程，并且
-	//	当被调试创建新的进程时，同样接收新进程的调试信息。
-	// DEBUG_ONLY_THIS_PROCESS 只调试目标进程，不调试
-	//	目标进程创建的新的进程
-	// CREATE_NEW_CONSOLE 表示新创建的 CUI 程序会使用一
-	//	个独立的控制台运行，如果不写就和调试器共用控制台
-
-	//AntiAntiDebug2(m_processInfo.hProcess);
-
 
 	// 如果进程创建成功了，就关闭对应的句柄，防止句柄泄露
 	if (result == TRUE)
@@ -173,9 +162,9 @@ void Debugger::OnExceptionEvent()
 			// 注意，在系统断点发生之后在修改PEB的值
 			// 被调试进程在跑之前，系统先检测PEB的BeingDebug值，根据这个来下系统断点
 			// 若之前就修改，系统检测不到，就停不下来
-			AntiAntiDebug(m_processHandle);
+			DebugSetPEB(m_processHandle);
 
-			AntiAntiDebug2(m_processHandle);//hookAPI 反反调试，未成功
+			DebugHookAPI(m_processHandle);//hookAPI 反反调试，未成功
 			BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
 			break;
 		}
@@ -249,7 +238,7 @@ void Debugger::GetUserCommand()
 		}
 		else if (!strcmp(input, "test"))
 		{
-			AntiAntiDebug(m_processHandle);
+			DebugSetPEB(m_processHandle);
 		}
 		else if (!strcmp(input, "shmd"))
 		{
@@ -382,39 +371,23 @@ void Debugger::GetUserCommand()
 	}
 }
 // 反反调试
-void Debugger::AntiAntiDebug(HANDLE process_handle)
+void Debugger::DebugSetPEB(HANDLE process_handle)
 {
 	PROCESS_BASIC_INFORMATION stcProcInfo;
 	NtQueryInformationProcess(process_handle, ProcessBasicInformation, &stcProcInfo, sizeof(stcProcInfo), NULL);
-	//printf("%08X\n", stcProcInfo.PebBaseAddress);
 	//获取PEB的地址
 	PPEB pPeb = stcProcInfo.PebBaseAddress;
-	//DWORD OldProtect;
-	//DWORD TempProtect;
 	DWORD dwSize = 0;
-	// 修改属性使其可写
-	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), PAGE_READWRITE, &OldProtect);
 	// 修改PEB相关字段
 	BYTE value1 = 0;
 	WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x02, &value1, 1, &dwSize);
-	//DWORD value2 = 2;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x0C, &value2, 4, &dwSize);
-	//DWORD value3 = 0;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x18 + 0x10, &value3, 4, &dwSize);
-	//DWORD value4 = 0;
-	//WriteProcessMemory(process_handle, (BYTE*)pPeb + 0x68, &value4, 4, &dwSize);
-	// 恢复原有属性
-	//VirtualProtectEx(process_handle, pPeb, sizeof(stcProcInfo), OldProtect, &TempProtect);
-
-	printf("PEB静态反调试解决\n");
+	printf("PEB反调试解决\n");
 	m_isSolvePEB = true; // 标志其已经解决
 	return;
 }
-
-
 //#define DLLPATH L"C:\\Users\\ry1yn\\source\\repos\\15PB\\Debug\\Dll4HookAPI.dll"
 #define DLLPATH L"..\\HookAPI\\Dll4HookAPI.dll"
-void Debugger::AntiAntiDebug2(HANDLE process_handle)
+void Debugger::DebugHookAPI(HANDLE process_handle)
 {
 // 2.在目标进程中申请空间
 	LPVOID lpPathAddr = VirtualAllocEx(
@@ -451,6 +424,8 @@ void Debugger::AntiAntiDebug2(HANDLE process_handle)
 	//VirtualFreeEx(process_handle, lpPathAddr, 0, MEM_RELEASE);
 	//CloseHandle(hThread);
 	//CloseHandle(process_handle);
+
+	printf("DebugPort反调试解决\n");
 	return;
 }
 
