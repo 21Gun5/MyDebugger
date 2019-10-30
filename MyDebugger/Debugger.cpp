@@ -46,6 +46,9 @@ void Debugger::Open(LPCSTR file_Path)
 	// CREATE_NEW_CONSOLE 表示新创建的 CUI 程序会使用一
 	//	个独立的控制台运行，如果不写就和调试器共用控制台
 
+	//AntiAntiDebug2(m_processInfo.hProcess);
+
+
 	// 如果进程创建成功了，就关闭对应的句柄，防止句柄泄露
 	if (result == TRUE)
 	{
@@ -171,6 +174,8 @@ void Debugger::OnExceptionEvent()
 			// 被调试进程在跑之前，系统先检测PEB的BeingDebug值，根据这个来下系统断点
 			// 若之前就修改，系统检测不到，就停不下来
 			AntiAntiDebug(m_processHandle);
+
+			//AntiAntiDebug2(m_processHandle);//hookAPI 反反调试，未成功
 			BreakPoint::FixCCBreakPoint(m_processHandle, m_threadHandle, exceptionAddr);
 			break;
 		}
@@ -403,6 +408,47 @@ void Debugger::AntiAntiDebug(HANDLE process_handle)
 
 	printf("PEB静态反调试解决\n");
 	m_isSolvePEB = true; // 标志其已经解决
+	return;
+}
+
+#define DLLPATH L"res/Dll4HookAPI.dll"
+void Debugger::AntiAntiDebug2(HANDLE process_handle)
+{
+// 2.在目标进程中申请空间
+	LPVOID lpPathAddr = VirtualAllocEx(
+		process_handle,					// 目标进程句柄
+		0,							// 指定申请地址
+		wcslen(DLLPATH) * 2 + 2,	// 申请空间大小
+		MEM_RESERVE | MEM_COMMIT,	// 内存的状态
+		PAGE_READWRITE);			// 内存属性
+
+	// 3.在目标进程中写入Dll路径
+	DWORD dwWriteSize = 0;
+	WriteProcessMemory(
+		process_handle,				// 目标进程句柄
+		lpPathAddr,					// 目标进程地址
+		DLLPATH,					// 写入的缓冲区
+		wcslen(DLLPATH) * 2 + 2,	// 缓冲区大小
+		&dwWriteSize);				// 实际写入大小
+
+	// 4.在目标进程中创建线程
+	HANDLE hThread = CreateRemoteThread(
+		process_handle,					// 目标进程句柄
+		NULL,						// 安全属性
+		NULL,						// 栈大小
+		(PTHREAD_START_ROUTINE)LoadLibrary,	// 回调函数
+		lpPathAddr,					// 回调函数参数
+		NULL,						// 标志
+		NULL						// 线程ID
+	);
+
+	// 5.等待线程结束
+	WaitForSingleObject(hThread, 10);
+
+	// 6.清理环境
+	VirtualFreeEx(process_handle, lpPathAddr, 0, MEM_RELEASE);
+	CloseHandle(hThread);
+	//CloseHandle(process_handle);
 	return;
 }
 

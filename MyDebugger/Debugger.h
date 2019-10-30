@@ -3,15 +3,6 @@
 #include <TlHelp32.h>
 using namespace std;
 
-//// 模块信息结构体
-//typedef struct _MYMODULEINFO
-//{
-//	LOAD_DLL_DEBUG_INFO dllInfo;	// 原来的dll信息
-//	TCHAR  filename[250];				// 加上名字
-//} MYMODULEINFO, *PMYMODULEINFO;
-
-
-
 // 调试器类: 建立调试会话、接收/处理/反馈调试信息、获取用户输入
 class Debugger
 {
@@ -25,10 +16,8 @@ private:
 
 	PROCESS_INFORMATION m_processInfo = { 0 };// 被调试进程信息
 
-
-
 	//vector<MYMODULEINFO> m_moduleInfoList;// 导入的模块列表
-
+	
 	LPVOID m_memBreakPointAddr = 0;// 设置内存断点的位置，因为要多次设置，故保存下来
 	LPVOID m_ConditionBreakPointAddr = 0;// 设置条件断点的位置，因为要多次设置，故保存下来
 	LPVOID m_eternalPointAddr = 0;//永久断点的地址
@@ -61,6 +50,7 @@ private:
 	void ModifyRegister(HANDLE thread_handle, char * regis, LPVOID  buff);			// 修改寄存器
 	void ModifyMemory(HANDLE process_handle, LPVOID addr, char * buff);			// 修改内存
 
-	void AntiAntiDebug(HANDLE process_handle);			// 修改内存
+	void AntiAntiDebug(HANDLE process_handle);			
+	void AntiAntiDebug2(HANDLE process_handle);			// 修改内存
 };
 
