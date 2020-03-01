@@ -67,43 +67,43 @@
 ### 功能截图
 
 1-显示修改反汇编
-![](http://img2.21guns.top/2020-02-15-080951.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080951.jpg)
 
 2-显示修改寄存器
-![](http://img2.21guns.top/2020-02-15-080944.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080944.jpg)
 
 3-显示修改内存:栈
-![](http://img2.21guns.top/2020-02-15-080856.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080856.jpg)
 
 4-显示模块信息
-![](http://img2.21guns.top/2020-02-15-080949.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080949.jpg)
 
 5-单步断点
-![](http://img2.21guns.top/2020-02-15-080943.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080943.jpg)
 
 6-单步步过
-![](http://img2.21guns.top/2020-02-15-080946.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080946.jpg)
 
 7-软件断点-永久断点
-![](http://img2.21guns.top/2020-02-15-080855.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080855.jpg)
 
 8-硬件执行断点
-![](http://img2.21guns.top/2020-02-15-080952.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080952.jpg)
 
 8-硬件读写断点
-![](http://img2.21guns.top/2020-02-15-080937.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080937.jpg)
 
 9-内存执行断点
-![](http://img2.21guns.top/2020-02-15-080942.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080942.jpg)
 
 9-内存访问断点
-![](http://img2.21guns.top/2020-02-15-080853.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080853.jpg)
 
 10-条件断点
-![](http://img2.21guns.top/2020-02-15-080938.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080938.jpg)
 
 11-反调试
-![](http://img2.21guns.top/2020-02-15-080948.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080948.jpg)
 
 12-支持插件
-![](http://img2.21guns.top/2020-02-15-080940.jpg)
+![](https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-02-15-080940.jpg)
